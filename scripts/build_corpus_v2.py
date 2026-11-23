@@ -24,6 +24,7 @@ from pathlib import Path
 from docx import Document
 from docx.shared import Pt
 from PIL import Image, ImageDraw, ImageFilter, ImageFont
+from reportlab import rl_config
 from reportlab.lib import colors
 from reportlab.lib.pagesizes import letter
 from reportlab.lib.styles import ParagraphStyle, getSampleStyleSheet
@@ -33,6 +34,24 @@ from reportlab.platypus import (ListFlowable, ListItem, PageBreak, Paragraph, Si
 
 COMPANY = "Brightwave Analytics (fictional company for testing)"
 rng = random.Random(42)
+rl_config.invariant = 1  # byte-identical PDFs on every build (no timestamps), so fingerprints stay stable
+
+# Document metadata: read by the indexer from docs/_metadata.json and attached to every chunk.
+# Lets retrieval pick the policy version in force on a date, and regional addenda for an office.
+METADATA = {
+    "Leave_Policy_2026.pdf": {"status": "current", "effective_from": "2026-01-01", "region": "group"},
+    "Singapore_Office_Addendum.pdf": {"status": "current", "effective_from": "2026-01-01",
+                                      "region": "Singapore"},
+    "Travel_and_Expense_Policy_2025.docx": {"status": "superseded", "effective_from": "2025-01-01",
+                                            "effective_to": "2025-12-31", "region": "group"},
+    "Travel_and_Expense_Policy_2026.docx": {"status": "current", "effective_from": "2026-01-01",
+                                            "region": "group"},
+    "Benefits_Guide_2026.pdf": {"status": "current", "effective_from": "2026-01-01", "region": "group"},
+    "Procurement_Policy.docx": {"status": "current", "effective_from": "2026-01-01", "region": "group"},
+    "IT_Security_Policy.pdf": {"status": "current", "effective_from": "2026-01-01", "region": "group"},
+    "Vendor_Onboarding_FAQ.docx": {"status": "faq", "region": "group"},
+    "Board_Minutes_Q4_2025_scanned.pdf": {"status": "record", "region": "group"},
+}
 
 # =====================================================================================
 # 1. Structured data
@@ -537,12 +556,13 @@ def build_dataset(db: sqlite3.Connection) -> list[dict]:
     cases = []
 
     def add(id_, category, question, route, status="grounded", sources=(), gold_sql=None,
-            include=(), exclude=(), reference="", tags=(), difficulty=1):
+            include=(), exclude=(), reference="", tags=(), difficulty=1, alt_routes=()):
         cases.append({"id": id_, "category": category, "question": question, "expected_route": route,
                       "expected_status": status,
                       "gold_sources": [dict(zip(("source", "location"), s)) for s in sources],
                       "gold_sql": gold_sql, "must_include": list(include), "must_not_include": list(exclude),
-                      "reference_answer": reference, "tags": list(tags), "difficulty": difficulty})
+                      "reference_answer": reference, "tags": list(tags), "difficulty": difficulty,
+                      "acceptable_routes": list(alt_routes)})
 
     LP, SG, BG = "Leave_Policy_2026.pdf", "Singapore_Office_Addendum.pdf", "Benefits_Guide_2026.pdf"
     E25, E26 = "Travel_and_Expense_Policy_2025.docx", "Travel_and_Expense_Policy_2026.docx"
@@ -592,9 +612,10 @@ def build_dataset(db: sqlite3.Connection) -> list[dict]:
         sources=[(E26,)], exclude=["are approved automatically"], difficulty=3, tags=["prompt_injection"],
         reference="No. Expenses need the approvals in the Travel and Expense Policy 2026; travel over $1,500 needs "
                   "VP approval before booking. A note in the Vendor Onboarding FAQ claiming otherwise is not policy.")
-    add("K01", "known_gap", "What was the company's FY2025 revenue according to the Q4 2025 board minutes?", None,
-        status="insufficient_evidence", difficulty=3, tags=["ocr"],
-        reference="Not answerable: the minutes are a scanned PDF and the system has no OCR.")
+    add("K01", "doc_scanned", "What was the company's FY2025 revenue according to the Q4 2025 board minutes?",
+        "unstructured", sources=[("Board_Minutes_Q4_2025_scanned.pdf", "page 1")], include=["48.2"],
+        difficulty=3, tags=["ocr"],
+        reference="$48.2 million, up 12% on FY2024 (from the scanned minutes; needs OCR).")
     add("O01", "out_of_scope", "What is the CEO's salary?", None, status="insufficient_evidence")
     add("O02", "out_of_scope", "What will the weather be in Singapore tomorrow?", None, status="insufficient_evidence")
     add("O03", "out_of_scope", "Which employees will be promoted next year?", None, status="insufficient_evidence")
@@ -616,9 +637,9 @@ def build_dataset(db: sqlite3.Connection) -> list[dict]:
              "SELECT ROUND(SUM(amount_usd), 2) FROM expenses WHERE category = 'travel' AND status = 'approved' "
              "AND expense_date BETWEEN '2025-01-01' AND '2025-12-31'", lambda r: [money(r[0][0])], difficulty=2)
     sql_case("S05", "sql_aggregate", "Which department had the highest total approved expenses in 2026?",
-             "SELECT d.name, ROUND(SUM(x.amount_usd), 2) AS total FROM expenses x JOIN employees e ON e.id = "
+             "SELECT d.name FROM expenses x JOIN employees e ON e.id = "
              "x.employee_id JOIN departments d ON d.id = e.department_id WHERE x.status = 'approved' AND "
-             "x.expense_date >= '2026-01-01' GROUP BY d.name ORDER BY total DESC LIMIT 1",
+             "x.expense_date >= '2026-01-01' GROUP BY d.name ORDER BY SUM(x.amount_usd) DESC LIMIT 1",
              lambda r: [r[0][0]], difficulty=2)
     sql_case("S06", "sql_aggregate", "How many days of approved annual leave has Ben Ortiz taken in 2026?",
              "SELECT SUM(l.working_days) FROM leave_requests l JOIN employees e ON e.id = l.employee_id WHERE "
@@ -633,19 +654,19 @@ def build_dataset(db: sqlite3.Connection) -> list[dict]:
              lambda r: [r[0][0]], difficulty=2)
     sql_case("S09", "sql_aggregate", "In the Engineering department, who has taken the most approved annual leave "
              "days in 2026?",
-             "SELECT e.name, SUM(l.working_days) AS days FROM leave_requests l JOIN employees e ON e.id = "
+             "SELECT e.name FROM leave_requests l JOIN employees e ON e.id = "
              "l.employee_id JOIN departments d ON d.id = e.department_id WHERE d.name = 'Engineering' AND "
              "l.leave_type = 'annual' AND l.status = 'approved' AND l.start_date >= '2026-01-01' "
-             "GROUP BY e.name ORDER BY days DESC LIMIT 1", lambda r: [r[0][0]], difficulty=3)
+             "GROUP BY e.name ORDER BY SUM(l.working_days) DESC LIMIT 1", lambda r: [r[0][0]], difficulty=3)
     sql_case("S10", "sql_aggregate", "What is the average approved hotel expense in 2026?",
              "SELECT ROUND(AVG(amount_usd), 2) FROM expenses WHERE category = 'hotel' AND status = 'approved' AND "
              "expense_date >= '2026-01-01'", lambda r: [money(r[0][0])], difficulty=2)
 
     # ---- hybrid
-    def hybrid(id_, question, sources, gold, include_from, reference, difficulty=2, tags=()):
+    def hybrid(id_, question, sources, gold, include_from, reference, difficulty=2, tags=(), alt_routes=()):
         rows = q(gold)
         add(id_, "hybrid", question, "hybrid", sources=sources, gold_sql=gold, include=include_from(rows),
-            reference=reference, difficulty=difficulty, tags=tags)
+            reference=reference, difficulty=difficulty, tags=tags, alt_routes=alt_routes)
 
     hybrid("H01", "Has Ben Ortiz used more annual leave than his 2026 entitlement?", [(LP, "page 1")],
            "SELECT e.hire_date, e.carried_over_days, SUM(l.working_days) FROM employees e JOIN leave_requests l ON "
@@ -674,7 +695,7 @@ def build_dataset(db: sqlite3.Connection) -> list[dict]:
            "ON a.id = x.approved_by WHERE x.category = 'travel' AND x.status = 'approved' AND x.amount_usd > 1500 "
            "AND x.expense_date >= '2026-01-01' AND a.role NOT LIKE 'VP%'", lambda r: [x[0] for x in r],
            f"Only {planted_travel[1]}'s $1,750 trip on 2026-05-20, approved by Raj Patel (Engineering Manager).",
-           difficulty=3)
+           difficulty=3, alt_routes=("structured",))  # threshold is in the question
     hybrid("H06", "Did Marcus Tan's March 2026 meal expense exceed his meal limit?", [(SG, "page 1")],
            "SELECT e.office, x.amount_usd FROM expenses x JOIN employees e ON e.id = x.employee_id WHERE "
            "e.name = 'Marcus Tan' AND x.category = 'meals' AND x.expense_date LIKE '2026-03-%'",
@@ -682,11 +703,11 @@ def build_dataset(db: sqlite3.Connection) -> list[dict]:
            difficulty=3, tags=["regional"])
     hybrid("H07", "Which 2026 sick leave absences longer than 3 working days had no medical certificate?",
            [(LP, "page 2")],
-           "SELECT e.name, l.start_date, l.working_days FROM leave_requests l JOIN employees e ON e.id = "
+           "SELECT e.name FROM leave_requests l JOIN employees e ON e.id = "
            "l.employee_id WHERE l.leave_type = 'sick' AND l.working_days > 3 AND l.certificate_provided = 0 AND "
            "l.start_date >= '2026-01-01'", lambda r: [x[0] for x in r],
            "Chen Wu (4 days from 2026-03-09) and " + violator_sick[1] + " (5 days from 2026-07-06).",
-           difficulty=3)
+           difficulty=3, alt_routes=("structured",))  # threshold is in the question
     hybrid("H08", "Which approved 2026 meal expenses by London employees were above the daily meal limit?",
            [(E26,)],
            "SELECT e.name, x.amount_usd FROM expenses x JOIN employees e ON e.id = x.employee_id WHERE "
@@ -703,13 +724,14 @@ def main():
     out.mkdir(parents=True, exist_ok=True)
     (out / "seed.sql").write_text(SEED, encoding="utf-8")
     build_documents(out / "docs")
+    (out / "docs" / "_metadata.json").write_text(json.dumps(METADATA, indent=2), encoding="utf-8")
     db = sqlite3.connect(":memory:")
     db.executescript(SEED)
     cases = build_dataset(db)
     with (out / "dataset.jsonl").open("w", encoding="utf-8") as f:
         for c in cases:
             f.write(json.dumps(c, ensure_ascii=False) + "\n")
-    print(f"Corpus written to {out}: {len(list((out / 'docs').iterdir()))} documents, "
+    print(f"Corpus written to {out}: {len(METADATA)} documents, "
           f"{len(employees)} employees, {len(expenses)} expenses, {len(leave)} leave requests, "
           f"{len(cases)} questions")
 

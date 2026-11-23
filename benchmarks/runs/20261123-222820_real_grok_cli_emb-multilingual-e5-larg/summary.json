@@ -1,0 +1,162 @@
+{
+  "config": {
+    "run_id": "20261123-222820_real_grok_cli_emb-multilingual-e5-larg",
+    "started": "2026-11-23T22:28:20",
+    "corpus": "benchmarks\\corpora\\real",
+    "corpus_fingerprint": "212935fad86e7936",
+    "dataset_sha": "c297130db4ea",
+    "cases": 16,
+    "stages": [
+      "retrieval"
+    ],
+    "repeat": 1,
+    "workers": 3,
+    "judge": false,
+    "llm": null,
+    "retrieval": {
+      "top_k": 4,
+      "chunk_size": 800,
+      "chunk_overlap": 150,
+      "embedding_model": "intfloat/multilingual-e5-large",
+      "ocr": true
+    },
+    "judge_llm": null,
+    "prompts_sha": "452b67bf625f",
+    "code_sha": "75eed837fecb",
+    "scoring_version": "2",
+    "git": {
+      "commit": "c057353",
+      "dirty": true
+    }
+  },
+  "stages": {
+    "retrieval": {
+      "overall": {
+        "n": 14,
+        "passed": 14,
+        "rate": 1.0,
+        "ci95": [
+          0.785,
+          1.0
+        ]
+      },
+      "attempt_rate": {
+        "n": 14,
+        "passed": 14,
+        "rate": 1.0,
+        "ci95": [
+          0.785,
+          1.0
+        ]
+      },
+      "flaky_cases": [],
+      "by_category": {
+        "cross_lingual": {
+          "n": 3,
+          "passed": 3,
+          "rate": 1.0,
+          "ci95": [
+            0.438,
+            1.0
+          ]
+        },
+        "doc_long": {
+          "n": 1,
+          "passed": 1,
+          "rate": 1.0,
+          "ci95": [
+            0.207,
+            1.0
+          ]
+        },
+        "doc_lookup": {
+          "n": 8,
+          "passed": 8,
+          "rate": 1.0,
+          "ci95": [
+            0.676,
+            1.0
+          ]
+        },
+        "doc_table": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        }
+      },
+      "by_difficulty": {
+        "1": {
+          "n": 6,
+          "passed": 6,
+          "rate": 1.0,
+          "ci95": [
+            0.61,
+            1.0
+          ]
+        },
+        "2": {
+          "n": 5,
+          "passed": 5,
+          "rate": 1.0,
+          "ci95": [
+            0.566,
+            1.0
+          ]
+        },
+        "3": {
+          "n": 3,
+          "passed": 3,
+          "rate": 1.0,
+          "ci95": [
+            0.438,
+            1.0
+          ]
+        }
+      },
+      "by_tag": {
+        "bilingual_doc": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        },
+        "chinese_question": {
+          "n": 3,
+          "passed": 3,
+          "rate": 1.0,
+          "ci95": [
+            0.438,
+            1.0
+          ]
+        },
+        "flattened_table": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        }
+      },
+      "failed_cases": [],
+      "wall_seconds": 0.6,
+      "cost": null,
+      "seconds_per_case": {
+        "p50": 0.04,
+        "p95": 0.05
+      },
+      "hit_at_1": 0.857,
+      "mrr": 0.911,
+      "all_gold_sources_found": 1.0
+    }
+  },
+  "finished": "2026-11-23T22:28:24"
+}

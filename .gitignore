@@ -8,3 +8,5 @@ data/sqlite/*.db
 tests/eval/last_run.json
 tests/eval/runs/
 tests/eval/questions_10k.jsonl
+.bench/
+data/logs/

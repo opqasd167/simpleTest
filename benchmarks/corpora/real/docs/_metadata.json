@@ -1,0 +1,5 @@
+{
+  "credit_card_minimum_payment_amount.pdf": {"status": "current", "effective_from": "2020-04-01", "region": "Hong Kong", "language": "en"},
+  "hang_seng_bank_card_notice_e.pdf": {"status": "current", "effective_from": "2025-04-01", "region": "Hong Kong", "language": "en"},
+  "maintenance_schedule_tchi.pdf": {"status": "record", "region": "Hong Kong", "language": "zh-Hant,en"}
+}

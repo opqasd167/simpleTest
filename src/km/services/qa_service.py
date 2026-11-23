@@ -1,14 +1,12 @@
 """The pipeline: route -> retrieve -> answer -> validate. Decides what the user sees."""
-import contextvars
 import logging
 import time
-from concurrent.futures import ThreadPoolExecutor
 
 from km.domain.models import AskResult, Evidence, Route, SqlResult
 from km.generation.answer_writer import AnswerWriter
 from km.llm.base import LLMError
 from km.observability import score_trace, span  # Langfuse; no-ops when tracing is off
-from km.retrieval.doc_retriever import DocRetriever
+from km.retrieval.doc_retriever import DocRetriever, hints_from
 from km.retrieval.sql_retriever import SqlRetrievalError, SqlRetriever
 from km.routing.intent_router import IntentRouter
 from km.storage.sql_store import SqlStore
@@ -79,16 +77,15 @@ class QAService:
         return AskResult(**base, status="insufficient_evidence", answer=NO_ANSWER, verdict=verdict)
 
     def _retrieve(self, question: str, route: Route) -> Evidence:
-        want_docs = route.intent in ("unstructured", "hybrid")
-        want_sql = route.intent in ("structured", "hybrid")
-        with ThreadPoolExecutor(max_workers=2) as pool:  # hybrid: both run in parallel
-            # copy_context().run carries the current Langfuse trace into the worker thread
-            docs_job = (pool.submit(contextvars.copy_context().run, self._docs.retrieve, question)
-                        if want_docs else None)
-            sql_job = (pool.submit(contextvars.copy_context().run, self._safe_sql, question)
-                       if want_sql else None)
-            docs = docs_job.result() if docs_job else []
-            sql = sql_job.result() if sql_job else None
+        """SQL first, then documents. Facts from the database (the employee's office, the year of
+        the expense) decide WHICH policy applies, so they steer document retrieval: a Singapore
+        employee also gets the Singapore addendum, a 2025 expense also gets the 2025 policy.
+        Document search is fast (~0.1 s), so running the two steps in sequence costs almost nothing."""
+        sql = self._safe_sql(question) if route.intent in ("structured", "hybrid") else None
+        docs = []
+        if route.intent in ("unstructured", "hybrid"):
+            hints = hints_from(question, sql)
+            docs = self._docs.retrieve(question, hints) if hints else self._docs.retrieve(question)
         return Evidence(docs=docs, sql=sql)
 
     def _safe_sql(self, question: str) -> SqlResult | None:

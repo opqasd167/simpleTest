@@ -2,11 +2,12 @@ from functools import lru_cache
 
 from fastapi import Depends, FastAPI
 
-from km.api.schemas import AskRequest
+from km.api.schemas import AskRequest, FeedbackRequest
 from km.config import get_settings
 from km.container import build_qa_service
 from km.domain.models import AskResult
 from km.logging_setup import setup_logging
+from km.question_log import log_feedback, log_question
 from km.services.qa_service import QAService
 
 setup_logging()
@@ -25,4 +26,13 @@ def health() -> dict:
 
 @app.post("/ask", response_model=AskResult)
 def ask(req: AskRequest, service: QAService = Depends(get_service)) -> AskResult:
-    return service.ask(req.question)
+    result = service.ask(req.question)
+    log_question(get_settings().question_log, result, channel="api")
+    return result
+
+
+@app.post("/feedback")
+def feedback(req: FeedbackRequest) -> dict:
+    """Users flag unhelpful answers; `python -m km.bench harvest` turns them into benchmark cases."""
+    log_feedback(get_settings().question_log, req.question, req.helpful, req.comment)
+    return {"status": "recorded"}

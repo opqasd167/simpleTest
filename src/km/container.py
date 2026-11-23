@@ -23,7 +23,7 @@ def build_llm(s: Settings) -> LLMClient:
 def build_qa_service(s: Settings, llm: LLMClient | None = None) -> QAService:
     llm = llm or build_llm(s)
     sql_store = SqlStore(s.sqlite_path)
-    vectors = VectorStore(s.chroma_dir, s.chroma_collection)
+    vectors = VectorStore(s.chroma_dir, s.chroma_collection, s.embedding_model)
     return QAService(
         router=IntentRouter(llm),
         docs=DocRetriever(vectors, s.top_k),
@@ -34,4 +34,18 @@ def build_qa_service(s: Settings, llm: LLMClient | None = None) -> QAService:
 
 
 def build_indexer(s: Settings) -> Indexer:
-    return Indexer(VectorStore(s.chroma_dir, s.chroma_collection), s.chunk_size, s.chunk_overlap)
+    return Indexer(VectorStore(s.chroma_dir, s.chroma_collection, s.embedding_model),
+                   s.chunk_size, s.chunk_overlap, ocr=s.ocr_enabled, ocr_min_chars=s.ocr_min_chars)
+
+
+def build_judge_llm(s: Settings) -> LLMClient:
+    """The grading model for benchmarks. Use a different model than the one being tested
+    (KM_JUDGE_PROVIDER / KM_JUDGE_MODEL), so the system does not grade its own homework."""
+    if s.judge_provider is None and s.judge_model is None:
+        return build_llm(s)
+    provider = s.judge_provider or s.llm_provider
+    model_field = "grok_model" if provider == "grok_cli" else "llm_model"
+    update = {"llm_provider": provider}
+    if s.judge_model:
+        update[model_field] = s.judge_model
+    return build_llm(s.model_copy(update=update))

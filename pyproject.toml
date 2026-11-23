@@ -18,6 +18,9 @@ dependencies = [
 
 [project.optional-dependencies]
 dev = ["pytest", "httpx"]
+ocr = ["rapidocr-onnxruntime", "pymupdf"]          # read scanned PDFs (Chinese + English models)
+multilingual = ["fastembed"]                        # multilingual embedding models (ONNX, no PyTorch)
+corpus = ["reportlab"]                              # scripts/build_corpus_v2.py
 
 [project.scripts]
 km = "km.cli:main"

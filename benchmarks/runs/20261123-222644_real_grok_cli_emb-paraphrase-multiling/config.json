@@ -1,0 +1,30 @@
+{
+  "run_id": "20261123-222644_real_grok_cli_emb-paraphrase-multiling",
+  "started": "2026-11-23T22:26:44",
+  "corpus": "benchmarks\\corpora\\real",
+  "corpus_fingerprint": "16b720b15a5d4fe7",
+  "dataset_sha": "c297130db4ea",
+  "cases": 16,
+  "stages": [
+    "retrieval"
+  ],
+  "repeat": 1,
+  "workers": 3,
+  "judge": false,
+  "llm": null,
+  "retrieval": {
+    "top_k": 4,
+    "chunk_size": 800,
+    "chunk_overlap": 150,
+    "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+    "ocr": true
+  },
+  "judge_llm": null,
+  "prompts_sha": "452b67bf625f",
+  "code_sha": "75eed837fecb",
+  "scoring_version": "2",
+  "git": {
+    "commit": "c057353",
+    "dirty": true
+  }
+}

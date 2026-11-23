@@ -1,0 +1,640 @@
+{
+  "config": {
+    "run_id": "20261123-215903_v2_grok_cli_baseline",
+    "started": "2026-11-23T21:59:03",
+    "corpus": "benchmarks\\corpora\\v2",
+    "corpus_fingerprint": "46c6483b2529c197",
+    "dataset_sha": "9b8b6ebab962",
+    "cases": 40,
+    "stages": [
+      "route",
+      "sql",
+      "e2e"
+    ],
+    "repeat": 1,
+    "workers": 2,
+    "judge": false,
+    "llm": {
+      "provider": "grok_cli",
+      "model": "cli-default",
+      "effort": "low"
+    },
+    "retrieval": {
+      "top_k": 4,
+      "chunk_size": 800,
+      "chunk_overlap": 150
+    },
+    "prompts_sha": "9aa37130be8c",
+    "git": {
+      "commit": "c057353",
+      "dirty": true
+    }
+  },
+  "stages": {
+    "route": {
+      "overall": {
+        "n": 36,
+        "passed": 34,
+        "rate": 0.944,
+        "ci95": [
+          0.819,
+          0.985
+        ]
+      },
+      "attempt_rate": {
+        "n": 36,
+        "passed": 34,
+        "rate": 0.944,
+        "ci95": [
+          0.819,
+          0.985
+        ]
+      },
+      "flaky_cases": [],
+      "by_category": {
+        "adversarial": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        },
+        "doc_long": {
+          "n": 5,
+          "passed": 5,
+          "rate": 1.0,
+          "ci95": [
+            0.566,
+            1.0
+          ]
+        },
+        "doc_lookup": {
+          "n": 5,
+          "passed": 5,
+          "rate": 1.0,
+          "ci95": [
+            0.566,
+            1.0
+          ]
+        },
+        "doc_regional": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        },
+        "doc_table": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        },
+        "doc_versioning": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        },
+        "hybrid": {
+          "n": 8,
+          "passed": 6,
+          "rate": 0.75,
+          "ci95": [
+            0.409,
+            0.929
+          ]
+        },
+        "sql_aggregate": {
+          "n": 5,
+          "passed": 5,
+          "rate": 1.0,
+          "ci95": [
+            0.566,
+            1.0
+          ]
+        },
+        "sql_date": {
+          "n": 1,
+          "passed": 1,
+          "rate": 1.0,
+          "ci95": [
+            0.207,
+            1.0
+          ]
+        },
+        "sql_join": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        },
+        "sql_simple": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        }
+      },
+      "by_difficulty": {
+        "1": {
+          "n": 10,
+          "passed": 10,
+          "rate": 1.0,
+          "ci95": [
+            0.722,
+            1.0
+          ]
+        },
+        "2": {
+          "n": 19,
+          "passed": 19,
+          "rate": 1.0,
+          "ci95": [
+            0.832,
+            1.0
+          ]
+        },
+        "3": {
+          "n": 7,
+          "passed": 5,
+          "rate": 0.714,
+          "ci95": [
+            0.359,
+            0.918
+          ]
+        }
+      },
+      "by_tag": {
+        "prompt_injection": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        },
+        "regional": {
+          "n": 4,
+          "passed": 4,
+          "rate": 1.0,
+          "ci95": [
+            0.51,
+            1.0
+          ]
+        },
+        "status_filter": {
+          "n": 1,
+          "passed": 1,
+          "rate": 1.0,
+          "ci95": [
+            0.207,
+            1.0
+          ]
+        },
+        "table": {
+          "n": 1,
+          "passed": 1,
+          "rate": 1.0,
+          "ci95": [
+            0.207,
+            1.0
+          ]
+        },
+        "versioning": {
+          "n": 3,
+          "passed": 3,
+          "rate": 1.0,
+          "ci95": [
+            0.438,
+            1.0
+          ]
+        }
+      },
+      "failed_cases": [
+        "H05",
+        "H07"
+      ],
+      "wall_seconds": 126.5,
+      "cost": {
+        "llm_calls": 36,
+        "llm_seconds": 249.5,
+        "usd": 0.452
+      },
+      "seconds_per_case": {
+        "p50": 6.63,
+        "p95": 9.36
+      }
+    },
+    "sql": {
+      "overall": {
+        "n": 18,
+        "passed": 13,
+        "rate": 0.722,
+        "ci95": [
+          0.491,
+          0.875
+        ]
+      },
+      "attempt_rate": {
+        "n": 18,
+        "passed": 13,
+        "rate": 0.722,
+        "ci95": [
+          0.491,
+          0.875
+        ]
+      },
+      "flaky_cases": [],
+      "by_category": {
+        "hybrid": {
+          "n": 8,
+          "passed": 3,
+          "rate": 0.375,
+          "ci95": [
+            0.137,
+            0.694
+          ]
+        },
+        "sql_aggregate": {
+          "n": 5,
+          "passed": 5,
+          "rate": 1.0,
+          "ci95": [
+            0.566,
+            1.0
+          ]
+        },
+        "sql_date": {
+          "n": 1,
+          "passed": 1,
+          "rate": 1.0,
+          "ci95": [
+            0.207,
+            1.0
+          ]
+        },
+        "sql_join": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        },
+        "sql_simple": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        }
+      },
+      "by_difficulty": {
+        "1": {
+          "n": 3,
+          "passed": 3,
+          "rate": 1.0,
+          "ci95": [
+            0.438,
+            1.0
+          ]
+        },
+        "2": {
+          "n": 9,
+          "passed": 7,
+          "rate": 0.778,
+          "ci95": [
+            0.453,
+            0.937
+          ]
+        },
+        "3": {
+          "n": 6,
+          "passed": 3,
+          "rate": 0.5,
+          "ci95": [
+            0.188,
+            0.812
+          ]
+        }
+      },
+      "by_tag": {
+        "regional": {
+          "n": 2,
+          "passed": 0,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.658
+          ]
+        },
+        "status_filter": {
+          "n": 1,
+          "passed": 1,
+          "rate": 1.0,
+          "ci95": [
+            0.207,
+            1.0
+          ]
+        },
+        "versioning": {
+          "n": 1,
+          "passed": 0,
+          "rate": 0.0,
+          "ci95": [
+            0.0,
+            0.793
+          ]
+        }
+      },
+      "failed_cases": [
+        "H01",
+        "H02",
+        "H04",
+        "H06",
+        "H08"
+      ],
+      "wall_seconds": 122.8,
+      "cost": {
+        "llm_calls": 18,
+        "llm_seconds": 229.6,
+        "usd": 0.2549
+      },
+      "seconds_per_case": {
+        "p50": 12.84,
+        "p95": 19.89
+      },
+      "outcomes": {
+        "match": 13,
+        "mismatch": 5
+      }
+    },
+    "e2e": {
+      "overall": {
+        "n": 40,
+        "passed": 37,
+        "rate": 0.925,
+        "ci95": [
+          0.801,
+          0.974
+        ]
+      },
+      "attempt_rate": {
+        "n": 40,
+        "passed": 37,
+        "rate": 0.925,
+        "ci95": [
+          0.801,
+          0.974
+        ]
+      },
+      "flaky_cases": [],
+      "by_category": {
+        "adversarial": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        },
+        "doc_long": {
+          "n": 5,
+          "passed": 5,
+          "rate": 1.0,
+          "ci95": [
+            0.566,
+            1.0
+          ]
+        },
+        "doc_lookup": {
+          "n": 5,
+          "passed": 5,
+          "rate": 1.0,
+          "ci95": [
+            0.566,
+            1.0
+          ]
+        },
+        "doc_regional": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        },
+        "doc_table": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        },
+        "doc_versioning": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        },
+        "hybrid": {
+          "n": 8,
+          "passed": 5,
+          "rate": 0.625,
+          "ci95": [
+            0.306,
+            0.863
+          ]
+        },
+        "known_gap": {
+          "n": 1,
+          "passed": 1,
+          "rate": 1.0,
+          "ci95": [
+            0.207,
+            1.0
+          ]
+        },
+        "out_of_scope": {
+          "n": 3,
+          "passed": 3,
+          "rate": 1.0,
+          "ci95": [
+            0.438,
+            1.0
+          ]
+        },
+        "sql_aggregate": {
+          "n": 5,
+          "passed": 5,
+          "rate": 1.0,
+          "ci95": [
+            0.566,
+            1.0
+          ]
+        },
+        "sql_date": {
+          "n": 1,
+          "passed": 1,
+          "rate": 1.0,
+          "ci95": [
+            0.207,
+            1.0
+          ]
+        },
+        "sql_join": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        },
+        "sql_simple": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        }
+      },
+      "by_difficulty": {
+        "1": {
+          "n": 13,
+          "passed": 13,
+          "rate": 1.0,
+          "ci95": [
+            0.772,
+            1.0
+          ]
+        },
+        "2": {
+          "n": 19,
+          "passed": 19,
+          "rate": 1.0,
+          "ci95": [
+            0.832,
+            1.0
+          ]
+        },
+        "3": {
+          "n": 8,
+          "passed": 5,
+          "rate": 0.625,
+          "ci95": [
+            0.306,
+            0.863
+          ]
+        }
+      },
+      "by_tag": {
+        "ocr": {
+          "n": 1,
+          "passed": 1,
+          "rate": 1.0,
+          "ci95": [
+            0.207,
+            1.0
+          ]
+        },
+        "prompt_injection": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        },
+        "regional": {
+          "n": 4,
+          "passed": 2,
+          "rate": 0.5,
+          "ci95": [
+            0.15,
+            0.85
+          ]
+        },
+        "status_filter": {
+          "n": 1,
+          "passed": 1,
+          "rate": 1.0,
+          "ci95": [
+            0.207,
+            1.0
+          ]
+        },
+        "table": {
+          "n": 1,
+          "passed": 1,
+          "rate": 1.0,
+          "ci95": [
+            0.207,
+            1.0
+          ]
+        },
+        "versioning": {
+          "n": 3,
+          "passed": 2,
+          "rate": 0.667,
+          "ci95": [
+            0.208,
+            0.939
+          ]
+        }
+      },
+      "failed_cases": [
+        "H02",
+        "H04",
+        "H06"
+      ],
+      "wall_seconds": 543.1,
+      "cost": {
+        "llm_calls": 132,
+        "llm_seconds": 1053.7,
+        "usd": 1.5294
+      },
+      "seconds_per_case": {
+        "p50": 26.45,
+        "p95": 43.43
+      },
+      "outcomes": {
+        "correct": 33,
+        "correct_refusal": 4,
+        "false_refusal": 3
+      }
+    }
+  },
+  "finished": "2026-11-23T22:12:16"
+}

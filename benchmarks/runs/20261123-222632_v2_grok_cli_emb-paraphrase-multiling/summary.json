@@ -1,0 +1,218 @@
+{
+  "config": {
+    "run_id": "20261123-222632_v2_grok_cli_emb-paraphrase-multiling",
+    "started": "2026-11-23T22:26:32",
+    "corpus": "benchmarks\\corpora\\v2",
+    "corpus_fingerprint": "954b6df6e8a62831",
+    "dataset_sha": "7221ad189ca3",
+    "cases": 40,
+    "stages": [
+      "retrieval"
+    ],
+    "repeat": 1,
+    "workers": 3,
+    "judge": false,
+    "llm": null,
+    "retrieval": {
+      "top_k": 4,
+      "chunk_size": 800,
+      "chunk_overlap": 150,
+      "embedding_model": "sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2",
+      "ocr": true
+    },
+    "judge_llm": null,
+    "prompts_sha": "452b67bf625f",
+    "code_sha": "75eed837fecb",
+    "scoring_version": "2",
+    "git": {
+      "commit": "c057353",
+      "dirty": true
+    }
+  },
+  "stages": {
+    "retrieval": {
+      "overall": {
+        "n": 27,
+        "passed": 26,
+        "rate": 0.963,
+        "ci95": [
+          0.817,
+          0.993
+        ]
+      },
+      "attempt_rate": {
+        "n": 27,
+        "passed": 26,
+        "rate": 0.963,
+        "ci95": [
+          0.817,
+          0.993
+        ]
+      },
+      "flaky_cases": [],
+      "by_category": {
+        "adversarial": {
+          "n": 2,
+          "passed": 1,
+          "rate": 0.5,
+          "ci95": [
+            0.095,
+            0.905
+          ]
+        },
+        "doc_long": {
+          "n": 5,
+          "passed": 5,
+          "rate": 1.0,
+          "ci95": [
+            0.566,
+            1.0
+          ]
+        },
+        "doc_lookup": {
+          "n": 5,
+          "passed": 5,
+          "rate": 1.0,
+          "ci95": [
+            0.566,
+            1.0
+          ]
+        },
+        "doc_regional": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        },
+        "doc_scanned": {
+          "n": 1,
+          "passed": 1,
+          "rate": 1.0,
+          "ci95": [
+            0.207,
+            1.0
+          ]
+        },
+        "doc_table": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        },
+        "doc_versioning": {
+          "n": 2,
+          "passed": 2,
+          "rate": 1.0,
+          "ci95": [
+            0.342,
+            1.0
+          ]
+        },
+        "hybrid": {
+          "n": 8,
+          "passed": 8,
+          "rate": 1.0,
+          "ci95": [
+            0.676,
+            1.0
+          ]
+        }
+      },
+      "by_difficulty": {
+        "1": {
+          "n": 7,
+          "passed": 7,
+          "rate": 1.0,
+          "ci95": [
+            0.646,
+            1.0
+          ]
+        },
+        "2": {
+          "n": 13,
+          "passed": 12,
+          "rate": 0.923,
+          "ci95": [
+            0.667,
+            0.986
+          ]
+        },
+        "3": {
+          "n": 7,
+          "passed": 7,
+          "rate": 1.0,
+          "ci95": [
+            0.646,
+            1.0
+          ]
+        }
+      },
+      "by_tag": {
+        "ocr": {
+          "n": 1,
+          "passed": 1,
+          "rate": 1.0,
+          "ci95": [
+            0.207,
+            1.0
+          ]
+        },
+        "prompt_injection": {
+          "n": 2,
+          "passed": 1,
+          "rate": 0.5,
+          "ci95": [
+            0.095,
+            0.905
+          ]
+        },
+        "regional": {
+          "n": 4,
+          "passed": 4,
+          "rate": 1.0,
+          "ci95": [
+            0.51,
+            1.0
+          ]
+        },
+        "table": {
+          "n": 1,
+          "passed": 1,
+          "rate": 1.0,
+          "ci95": [
+            0.207,
+            1.0
+          ]
+        },
+        "versioning": {
+          "n": 3,
+          "passed": 3,
+          "rate": 1.0,
+          "ci95": [
+            0.438,
+            1.0
+          ]
+        }
+      },
+      "failed_cases": [
+        "A01"
+      ],
+      "wall_seconds": 0.2,
+      "cost": null,
+      "seconds_per_case": {
+        "p50": 0.01,
+        "p95": 0.02
+      },
+      "hit_at_1": 0.63,
+      "mrr": 0.756,
+      "all_gold_sources_found": 0.963
+    }
+  },
+  "finished": "2026-11-23T22:26:34"
+}

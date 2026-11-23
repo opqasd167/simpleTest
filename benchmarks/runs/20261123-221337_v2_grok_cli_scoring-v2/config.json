@@ -1,0 +1,32 @@
+{
+  "run_id": "20261123-221337_v2_grok_cli_scoring-v2",
+  "started": "2026-11-23T22:13:37",
+  "corpus": "benchmarks\\corpora\\v2",
+  "corpus_fingerprint": "2e867bb5dd77e08d",
+  "dataset_sha": "47a0d6de1852",
+  "cases": 8,
+  "stages": [
+    "route",
+    "sql"
+  ],
+  "repeat": 1,
+  "workers": 2,
+  "judge": false,
+  "llm": {
+    "provider": "grok_cli",
+    "model": "cli-default",
+    "effort": "low"
+  },
+  "retrieval": {
+    "top_k": 4,
+    "chunk_size": 800,
+    "chunk_overlap": 150
+  },
+  "prompts_sha": "9aa37130be8c",
+  "code_sha": "d6d625731118",
+  "scoring_version": "2",
+  "git": {
+    "commit": "c057353",
+    "dirty": true
+  }
+}

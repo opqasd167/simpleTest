@@ -156,6 +156,7 @@ def execute(tier: str, rows: list[dict], fn, workers: int) -> list[dict]:
             if i % max(1, len(todo) // 10) == 0:
                 print(f"  {i}/{len(todo)}", flush=True)
     wanted = {r["id"] for r in rows}
+    execute.ran = len(todo)  # questions actually run now (for per-question cost)
     return [json.loads(line) for line in out_path.read_text(encoding="utf-8").splitlines()
             if line and json.loads(line)["id"] in wanted]
 
@@ -197,7 +198,7 @@ def report(tier: str, results: list[dict], wall: float, metered: MeteredLLM | No
               f"p95 {summary['latency_s']['p95']} s; wall {wall:.0f} s with {workers} workers")
 
     if metered and metered.calls:
-        n = len(results)
+        n = max(1, getattr(execute, "ran", len(results)))
         per_q = {"calls": metered.calls / n,
                  "in_tokens": metered.in_chars / CHARS_PER_TOKEN / n,
                  "out_tokens": (grok.total_output_tokens / n) if grok and grok.calls
@@ -209,6 +210,7 @@ def report(tier: str, results: list[dict], wall: float, metered: MeteredLLM | No
             summary["grok_usd_per_question"] = round(grok.total_cost_usd / n, 4)
             print(f"  measured Grok CLI cost: ${grok.total_cost_usd:.2f} total, "
                   f"${grok.total_cost_usd / n:.4f} per question")
+        summary["measured_on"] = n
         summary["projection"] = project(per_q, summary, all_rows, wall / max(n, 1) * workers, workers)
     return summary
 
@@ -243,6 +245,8 @@ def main() -> None:
     p.add_argument("--questions", default="tests/eval/questions_10k.jsonl")
     p.add_argument("--sample", default=None, help="all | distinct | per-intent | N")
     p.add_argument("--workers", type=int, default=1)
+    p.add_argument("--retry-failed", action="store_true",
+                   help="re-run only questions that failed last time (after a fix)")
     args = p.parse_args()
     setup_logging("WARNING")
 
@@ -258,9 +262,20 @@ def main() -> None:
 
     s = get_settings()
     chosen = sample(rows, args.sample or ("distinct" if args.tier == "retrieval" else "per-intent"))
+    out_path = RUNS / f"{args.tier}.jsonl"
+    if args.retry_failed and out_path.exists():
+        # drop the failed records so execute() runs just those questions again
+        kept, failed = [], 0
+        for line in out_path.read_text(encoding="utf-8").splitlines():
+            if line and not json.loads(line)["passed"]:
+                failed += 1
+            elif line:
+                kept.append(line)
+        out_path.write_text("".join(k + "\n" for k in kept), encoding="utf-8")
+        print(f"--retry-failed: re-running {failed} failed question(s)")
     metered, grok, start = None, None, time.perf_counter()
     if args.tier == "retrieval":
-        fn = check_retrieval(VectorStore(s.chroma_dir, s.chroma_collection), s.top_k)
+        fn = check_retrieval(VectorStore(s.chroma_dir, s.chroma_collection, s.embedding_model), s.top_k)
     else:
         inner = build_llm(s)
         grok = inner if hasattr(inner, "total_cost_usd") else None

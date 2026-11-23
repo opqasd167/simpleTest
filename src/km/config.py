@@ -43,6 +43,23 @@ class Settings(BaseSettings):
     chunk_overlap: int = 150
     top_k: int = 4
     sql_max_rows: int = 50
+    # "default" = Chroma's built-in English model (all-MiniLM-L6-v2).
+    # Any fastembed model name switches models, e.g. a multilingual one:
+    #   sentence-transformers/paraphrase-multilingual-MiniLM-L12-v2
+    # Changing it requires re-indexing (km ingest); each model gets its own collection.
+    embedding_model: str = "default"
+
+    # Ingestion
+    ocr_enabled: bool = True        # OCR pages that have no text layer (scanned PDFs)
+    ocr_min_chars: int = 20         # a page with fewer extracted characters is treated as scanned
+
+    # Evaluation: grade answers with a different model than the one being tested
+    judge_provider: Literal["anthropic", "grok_cli"] | None = None   # None = same as llm_provider
+    judge_model: str | None = None
+
+    # Question log (feeds the benchmark dataset). Off unless a path is set.
+    # Logs contain user questions: treat the file as Internal data.
+    question_log: Path | None = None
 
 
 @lru_cache

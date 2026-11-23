@@ -1,0 +1,34 @@
+{
+  "run_id": "20261123-224119_v2_grok_cli_hybrid-repeat3",
+  "started": "2026-11-23T22:41:19",
+  "corpus": "benchmarks\\corpora\\v2",
+  "corpus_fingerprint": "d8350c506ac986ae",
+  "dataset_sha": "7221ad189ca3",
+  "cases": 8,
+  "stages": [
+    "e2e"
+  ],
+  "repeat": 3,
+  "workers": 2,
+  "judge": false,
+  "llm": {
+    "provider": "grok_cli",
+    "model": "cli-default",
+    "effort": "low"
+  },
+  "retrieval": {
+    "top_k": 4,
+    "chunk_size": 800,
+    "chunk_overlap": 150,
+    "embedding_model": "default",
+    "ocr": true
+  },
+  "judge_llm": null,
+  "prompts_sha": "452b67bf625f",
+  "code_sha": "75eed837fecb",
+  "scoring_version": "2",
+  "git": {
+    "commit": "c057353",
+    "dirty": true
+  }
+}

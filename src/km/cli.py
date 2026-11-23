@@ -4,6 +4,7 @@ from km.config import get_settings
 from km.container import build_indexer, build_qa_service
 from km.logging_setup import setup_logging
 from km.observability import flush
+from km.question_log import log_question
 from km.storage.sql_store import SqlStore
 
 
@@ -26,7 +27,9 @@ def main() -> None:
     elif args.cmd == "ingest":
         print(f"Indexed {build_indexer(s).index_folder(s.docs_dir)} chunks")
     elif args.cmd == "ask":
-        print(build_qa_service(s).ask(args.question).model_dump_json(indent=2))
+        result = build_qa_service(s).ask(args.question)
+        log_question(s.question_log, result, channel="cli")
+        print(result.model_dump_json(indent=2))
         flush()  # send the trace to Langfuse before exiting
     elif args.cmd == "serve":
         import uvicorn

@@ -1,0 +1,65 @@
+name: ci
+
+# Every push / PR: unit + integration tests (offline, FakeLLM) and the FREE retrieval benchmark.
+# Manual "Run workflow" with full=true: the LLM benchmark stages against the company LLM gateway.
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      full:
+        description: "Also run the LLM benchmark stages (route, sql, e2e); needs the gateway secrets"
+        type: boolean
+        default: false
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - name: Install
+        run: pip install -e ".[dev,ocr,multilingual]"
+      - name: Cache embedding and OCR models
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache
+          key: models-${{ hashFiles('pyproject.toml') }}
+      - name: Tests (offline)
+        run: pytest -q
+      - name: Retrieval benchmark (no LLM calls, free)
+        run: python -m km.bench run --stages retrieval --corpus benchmarks/corpora/v2 --label ci --fail-under retrieval=0.9
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: benchmark-runs
+          path: benchmarks/runs/
+
+  full-benchmark:
+    if: github.event_name == 'workflow_dispatch' && inputs.full
+    needs: test
+    # The company gateway is usually only reachable from inside the network:
+    # use a self-hosted runner there, e.g.  runs-on: [self-hosted, company-network]
+    runs-on: ubuntu-latest
+    env:
+      KM_LLM_PROVIDER: anthropic
+      KM_LLM_API_TOKEN: ${{ secrets.KM_LLM_API_TOKEN }}
+      KM_LLM_BASE_URL: ${{ secrets.KM_LLM_BASE_URL }}
+      KM_LLM_AUTH_MODE: ${{ vars.KM_LLM_AUTH_MODE || 'api_key' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+      - run: pip install -e ".[dev,ocr,multilingual]"
+      - name: LLM benchmark (costs tokens)
+        run: python -m km.bench run --stages route,sql,e2e --workers 4 --label release --fail-under route=0.9,e2e=0.85
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: full-benchmark-run
+          path: benchmarks/runs/

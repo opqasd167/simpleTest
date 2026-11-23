@@ -16,6 +16,25 @@ class DocChunk(BaseModel):
     source: str
     location: str
     text: str
+    meta: dict = {}  # document metadata: status, region, effective_from/to (YYYYMMDD ints), language
+
+    def label(self) -> str:
+        """'file, page 2; status superseded; applies 2025-01-01 to 2025-12-31; region Singapore'"""
+        parts = [f"{self.source}, {self.location}"]
+        if self.meta.get("status"):
+            parts.append(f"status {self.meta['status']}")
+        lo, hi = self.meta.get("effective_from"), self.meta.get("effective_to")
+        if lo:
+            end = "no end date" if not hi or hi >= 99990000 else _ymd(hi)
+            parts.append(f"applies {_ymd(lo)} to {end}")
+        if self.meta.get("region"):
+            parts.append(f"region {self.meta['region']}")
+        return "; ".join(parts)
+
+
+def _ymd(n: int) -> str:
+    s = str(n)
+    return f"{s[:4]}-{s[4:6]}-{s[6:]}"
 
 
 class SqlResult(BaseModel):
@@ -32,7 +51,7 @@ class Evidence(BaseModel):
 
     def render(self) -> str:
         """Evidence text with the [D1]/[SQL] tags the answer must cite."""
-        parts = [f"[D{i + 1}] ({d.source}, {d.location})\n{d.text}" for i, d in enumerate(self.docs)]
+        parts = [f"[D{i + 1}] ({d.label()})\n{d.text}" for i, d in enumerate(self.docs)]
         if self.sql:
             parts.append(f"[SQL] query: {self.sql.sql}\nrows: {json.dumps(self.sql.rows, default=str)}")
         return "\n\n".join(parts)

@@ -26,3 +26,24 @@ def test_ask_returns_result():
 def test_ask_rejects_empty_question():
     r = TestClient(app).post("/ask", json={"question": ""})
     assert r.status_code == 422
+
+
+def test_questions_and_feedback_are_logged(tmp_path, monkeypatch):
+    import json
+
+    import km.api.app as api
+    from km.config import Settings
+
+    log = tmp_path / "questions.jsonl"
+    monkeypatch.setattr(api, "get_settings", lambda: Settings(question_log=log))
+    app.dependency_overrides[get_service] = lambda: StubService()
+    try:
+        client = TestClient(app)
+        client.post("/ask", json={"question": "How many engineers?"})
+        r = client.post("/feedback", json={"question": "How many engineers?", "helpful": False, "comment": "wrong"})
+    finally:
+        app.dependency_overrides.clear()
+    assert r.json() == {"status": "recorded"}
+    records = [json.loads(line) for line in log.read_text(encoding="utf-8").splitlines()]
+    assert [r["type"] for r in records] == ["question", "feedback"]
+    assert records[0]["status"] == "grounded" and records[1]["helpful"] is False
