@@ -83,3 +83,19 @@ def test_ui_details_show_evidence_and_claims():
     details = _details_md(result)
     assert "Leave.pdf, page 2" in details and "SELECT 1 AS n" in details and "| n |" in details
     assert "`hybrid`" in details and "✅" in details
+
+
+def test_ui_feedback_finds_the_question_in_gradio_history():
+    import pytest
+
+    pytest.importorskip("gradio")
+    from km.api.ui import _question_before
+
+    history = [  # Gradio 6 hands content back as a list of blocks
+        {"role": "user", "content": [{"type": "text", "text": "First?"}]},
+        {"role": "assistant", "content": [{"type": "text", "text": "A1"}]},
+        {"role": "user", "content": "Second?"},
+        {"role": "assistant", "content": "A2"},
+    ]
+    assert _question_before(history, 1) == "First?"
+    assert _question_before(history, [3, 0]) == "Second?"

@@ -43,6 +43,12 @@ def _text(content) -> str:
     return str(content or "")
 
 
+def _question_before(history: list, index) -> str | None:
+    """The user question that a liked/disliked assistant message (at `index`) answered."""
+    i = index if isinstance(index, int) else index[0]
+    return next((_text(m["content"]) for m in reversed(history[:i]) if m["role"] == "user"), None)
+
+
 def _answer_md(r: AskResult) -> str:
     answer = _TAG.sub(r"**[\1]**", r.answer)
     return f"{answer}\n\n<sub>{STATUS.get(r.status, r.status)} · {r.latency_ms / 1000:.1f} s</sub>"
@@ -101,10 +107,9 @@ def build_ui(get_service: Callable[[], QAService], get_settings: Callable[[], Se
         return history + [{"role": "assistant", "content": _answer_md(result)}], _details_md(result)
 
     def on_feedback(evt: gr.LikeData, history: list):
-        if evt.liked is None:
+        if evt is None or evt.liked is None:
             return
-        i = evt.index if isinstance(evt.index, int) else evt.index[0]
-        question = next((_text(m["content"]) for m in reversed(history[:i]) if m["role"] == "user"), None)
+        question = _question_before(history, evt.index)
         if question:
             log_feedback(get_settings().question_log, question, bool(evt.liked))
             gr.Info("Thanks, feedback recorded.")
