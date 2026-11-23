@@ -11,8 +11,10 @@ Uses only the standard library, so it runs with any Python 3.11+ before anything
 """
 import argparse
 import getpass
+import hashlib
 import os
 import shutil
+import socket
 import subprocess
 import sys
 import time
@@ -22,6 +24,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
 VENV = ROOT / ".venv"
+STAMP = VENV / ".onboard-installed"       # fingerprint of the last successful install
 ENV_FILE, ENV_EXAMPLE = ROOT / ".env", ROOT / ".env.example"
 EXTRAS = "dev,ocr,multilingual,ui"           # same as CI
 SMOKE_QUESTION = "How many people work in Engineering?"
@@ -130,11 +133,40 @@ def step_venv() -> None:
     record("Virtual env", "OK", "created .venv")
 
 
-def step_install() -> bool:
+def install_fingerprint() -> str:
+    return hashlib.sha256((ROOT / "pyproject.toml").read_bytes() + EXTRAS.encode()).hexdigest()
+
+
+def locked_scripts() -> list[str]:
+    """Windows cannot overwrite a running .exe: a `km serve` left open makes pip fail on km.exe."""
+    if not WIN:
+        return []
+    locked = []
+    for exe in (VENV / "Scripts").glob("km*.exe"):
+        try:
+            open(exe, "r+b").close()
+        except OSError:
+            locked.append(exe.name)
+    return locked
+
+
+def step_install(force: bool) -> bool:
     banner(f"3. Install the project and test tools  (.[{EXTRAS}])")
     py = venv_python()
+    importable = subprocess.call([str(py), "-c", "import km, pytest"], cwd=ROOT, env=child_env(),
+                                 stderr=subprocess.DEVNULL) == 0
+    if not force and importable and STAMP.exists() and STAMP.read_text().strip() == install_fingerprint():
+        record("Install dependencies", "OK", "already up to date (pyproject.toml unchanged; --reinstall to force)")
+        return True
+    if locked := locked_scripts():
+        record("Install dependencies", "FAIL", f"{', '.join(locked)} is in use: stop any running "
+               "`km serve` / `km ask` (Ctrl+C in its window) and run setup again")
+        return False
     subprocess.call([str(py), "-m", "pip", "install", "-q", "--upgrade", "pip"], cwd=ROOT, env=child_env())
-    return run([py, "-m", "pip", "install", "-e", f".[{EXTRAS}]"], "Install dependencies")
+    if run([py, "-m", "pip", "install", "-e", f".[{EXTRAS}]"], "Install dependencies"):
+        STAMP.write_text(install_fingerprint())
+        return True
+    return False
 
 
 def step_env(interactive: bool) -> None:
@@ -205,8 +237,13 @@ def step_serve(interactive: bool) -> None:
         return
     if ask("\nStart the API now and open the chat UI at http://127.0.0.1:8000/ui ? (y/n)", "n", interactive).lower() != "y":
         return
-    print("Starting the API. Press Ctrl+C to stop.")
+    with socket.socket() as s:
+        already_running = s.connect_ex(("127.0.0.1", 8000)) == 0
     webbrowser.open("http://127.0.0.1:8000/ui")
+    if already_running:
+        print("Something is already serving port 8000 (an earlier `km serve`?); opened the browser on it.")
+        return
+    print("Starting the API. Press Ctrl+C to stop.")
     try:
         subprocess.call([str(venv_python()), "-m", "km.cli", "serve"], cwd=ROOT, env=child_env())
     except KeyboardInterrupt:
@@ -236,13 +273,14 @@ def main() -> int:
     p.add_argument("--yes", "-y", action="store_true", help="never prompt; keep .env as it is")
     p.add_argument("--offline", action="store_true", help="skip steps that call an LLM")
     p.add_argument("--no-bench", action="store_true", help="skip the retrieval benchmark")
+    p.add_argument("--reinstall", action="store_true", help="run pip install even if pyproject.toml is unchanged")
     args = p.parse_args()
     interactive = not args.yes and sys.stdin.isatty()
     os.chdir(ROOT)
 
     step_python()
     step_venv()
-    if not step_install():
+    if not step_install(args.reinstall):
         return summary()  # nothing else can run without the packages
     step_env(interactive)
     step_data()
