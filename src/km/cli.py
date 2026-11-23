@@ -16,7 +16,7 @@ def main() -> None:
     sub.add_parser("ingest", help="index files in data/raw/docs")
     ask = sub.add_parser("ask", help="ask one question")
     ask.add_argument("question")
-    serve = sub.add_parser("serve", help="start the REST API")
+    serve = sub.add_parser("serve", help="start the REST API and the chat UI")
     serve.add_argument("--port", type=int, default=8000)
     args = parser.parse_args()
 
@@ -33,6 +33,7 @@ def main() -> None:
         flush()  # send the trace to Langfuse before exiting
     elif args.cmd == "serve":
         import uvicorn
+        print(f"Chat UI: http://127.0.0.1:{args.port}/ui    API docs: http://127.0.0.1:{args.port}/docs")
         uvicorn.run("km.api.app:app", port=args.port)
 
 

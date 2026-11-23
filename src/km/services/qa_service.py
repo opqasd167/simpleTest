@@ -50,7 +50,7 @@ class QAService:
                              "sql": evidence.sql.sql if evidence.sql else None})
         base = dict(question=question, route=route,
                     sources=sorted({f"{d.source} ({d.location})" for d in evidence.docs}),
-                    sql=evidence.sql.sql if evidence.sql else None)
+                    sql=evidence.sql.sql if evidence.sql else None, evidence=evidence.items())
 
         if evidence.is_empty():
             return AskResult(**base, status="insufficient_evidence", answer=NO_ANSWER)

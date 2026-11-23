@@ -40,7 +40,8 @@ src/km/
                        indexer (attaches docs/_metadata.json: status, effective dates, region)
   routing/ retrieval/ generation/ validation/
   services/qa_service.py   the pipeline and the final decision
-  api/app.py           FastAPI: POST /ask, POST /feedback, GET /health
+  api/app.py           FastAPI: POST /ask, POST /feedback, GET /health; mounts the chat UI at /ui
+  api/ui.py            Gradio chat UI (optional `ui` extra): answer, route, evidence, claim check, feedback
   question_log.py      optional log of real questions + feedback (feeds the benchmark)
   bench/               benchmark suite: python -m km.bench run | compare | list | harvest
   cli.py               km seed | ingest | ask | serve
@@ -110,13 +111,13 @@ setup.cmd --yes --offline     # no prompts, no LLM calls (add --no-bench to skip
 ```powershell
 python -m venv .venv
 .venv\Scripts\Activate.ps1
-pip install -e ".[dev,ocr,multilingual]"   # ocr/multilingual are optional extras
+pip install -e ".[dev,ocr,multilingual,ui]"   # ocr/multilingual/ui are optional extras
 Copy-Item .env.example .env      # then edit .env (see below)
 
 km seed                          # create SQLite tables + demo rows
 km ingest                        # index data/raw/docs (first run downloads an ~80 MB embedding model)
 km ask "How many people work in Engineering?"
-km serve                         # API at http://127.0.0.1:8000/docs
+km serve                         # chat UI at http://127.0.0.1:8000/ui, API at /docs
 pytest                           # offline tests, no LLM needed
 python tests/eval/run_eval.py    # 17-question evaluation against the configured LLM
 ```
@@ -145,6 +146,15 @@ Set `KM_LLM_PROVIDER=grok_cli` to simulate the company gateway with the locally 
 `grok` CLI. Each LLM call runs `grok` headless, single-turn, with no tools, in an empty temp folder,
 using `--json-schema` for structured outputs. It is slower than a direct API (several seconds per call)
 and bills your Grok plan, but needs no company token.
+
+### Chat UI
+
+`km serve` also serves a browser chat UI at http://127.0.0.1:8000/ui (needs the `ui` extra, which installs
+Gradio; `/` redirects there). Each answer shows its status and latency; the side panel shows the route and its
+reason, the claim-by-claim check, and the evidence behind every `[D1]`/`[SQL]` tag (document chunk with file,
+page and metadata, or the SQL query and its rows). Thumbs up/down are logged like `POST /feedback`, and
+questions are logged with `channel: "ui"` when `KM_QUESTION_LOG` is set. `/ask` responses now include the same
+`evidence` list.
 
 ### Example queries
 

@@ -20,6 +20,7 @@ dependencies = [
 dev = ["pytest", "httpx"]
 ocr = ["rapidocr-onnxruntime", "pymupdf"]          # read scanned PDFs (Chinese + English models)
 multilingual = ["fastembed"]                        # multilingual embedding models (ONNX, no PyTorch)
+ui = ["gradio>=6"]                                  # chat UI at /ui (km serve)
 corpus = ["reportlab"]                              # scripts/build_corpus_v2.py
 
 [project.scripts]

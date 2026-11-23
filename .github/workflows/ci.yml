@@ -22,7 +22,7 @@ jobs:
           python-version: "3.11"
           cache: pip
       - name: Install
-        run: pip install -e ".[dev,ocr,multilingual]"
+        run: pip install -e ".[dev,ocr,multilingual,ui]"
       - name: Cache embedding and OCR models
         uses: actions/cache@v4
         with:
@@ -55,7 +55,7 @@ jobs:
         with:
           python-version: "3.11"
           cache: pip
-      - run: pip install -e ".[dev,ocr,multilingual]"
+      - run: pip install -e ".[dev,ocr,multilingual,ui]"
       - name: LLM benchmark (costs tokens)
         run: python -m km.bench run --stages route,sql,e2e --workers 4 --label release --fail-under route=0.9,e2e=0.85
       - uses: actions/upload-artifact@v4

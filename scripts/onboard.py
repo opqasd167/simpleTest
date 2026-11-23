@@ -23,7 +23,7 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parents[1]
 VENV = ROOT / ".venv"
 ENV_FILE, ENV_EXAMPLE = ROOT / ".env", ROOT / ".env.example"
-EXTRAS = "dev,ocr,multilingual"           # same as CI
+EXTRAS = "dev,ocr,multilingual,ui"           # same as CI
 SMOKE_QUESTION = "How many people work in Engineering?"
 WIN = os.name == "nt"
 
@@ -203,10 +203,10 @@ def step_smoke(offline: bool) -> bool:
 def step_serve(interactive: bool) -> None:
     if not interactive:
         return
-    if ask("\nStart the API now and open http://127.0.0.1:8000/docs ? (y/n)", "n", interactive).lower() != "y":
+    if ask("\nStart the API now and open the chat UI at http://127.0.0.1:8000/ui ? (y/n)", "n", interactive).lower() != "y":
         return
     print("Starting the API. Press Ctrl+C to stop.")
-    webbrowser.open("http://127.0.0.1:8000/docs")
+    webbrowser.open("http://127.0.0.1:8000/ui")
     try:
         subprocess.call([str(venv_python()), "-m", "km.cli", "serve"], cwd=ROOT, env=child_env())
     except KeyboardInterrupt:
@@ -221,7 +221,7 @@ def summary() -> int:
     activate = r".venv\Scripts\Activate.ps1" if WIN else "source .venv/bin/activate"
     print(f"\nNext: {activate}   then try:")
     print('  km ask "What is the daily meal expense limit?"')
-    print("  km serve                          # http://127.0.0.1:8000/docs")
+    print("  km serve                          # chat UI http://127.0.0.1:8000/ui, API /docs")
     print("  python -m km.bench run --stages route,sql,e2e --workers 2   # full benchmark (costs tokens)")
     if failed:
         print(f"\n{len(failed)} step(s) failed: {', '.join(failed)}. Scroll up for the error, fix it, "

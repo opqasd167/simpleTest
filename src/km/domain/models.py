@@ -56,6 +56,20 @@ class Evidence(BaseModel):
             parts.append(f"[SQL] query: {self.sql.sql}\nrows: {json.dumps(self.sql.rows, default=str)}")
         return "\n\n".join(parts)
 
+    def items(self) -> list["EvidenceItem"]:
+        """The same evidence as render(), one item per tag, so a UI can show what [D2] refers to."""
+        items = [EvidenceItem(tag=f"D{i + 1}", label=d.label(), text=d.text) for i, d in enumerate(self.docs)]
+        if self.sql:
+            items.append(EvidenceItem(tag="SQL", label=self.sql.sql,
+                                      text=json.dumps(self.sql.rows, default=str, ensure_ascii=False)))
+        return items
+
+
+class EvidenceItem(BaseModel):
+    tag: str    # "D1".."Dn" or "SQL", as cited in the answer
+    label: str  # document label, or the SQL query
+    text: str   # chunk text, or the SQL rows as JSON
+
 
 class Claim(BaseModel):
     claim: str
@@ -76,4 +90,5 @@ class AskResult(BaseModel):
     sources: list[str] = []
     sql: str | None = None
     verdict: Verdict | None = None
+    evidence: list[EvidenceItem] = []
     latency_ms: int = 0

@@ -6,7 +6,7 @@ On Windows, double-click **`setup.cmd`**. On macOS or Linux, run `./setup.sh`.
 
 1. **Finds Python 3.11 or newer.** If none is installed, it offers to install it with winget.
 2. **Creates `.venv`, or reuses the existing one**, then installs the project with the same extras CI
-   uses (`dev,ocr,multilingual`).
+   uses (`dev,ocr,multilingual,ui`).
 3. **Sets up `.env`.** If there isn't one, it copies `.env.example` and asks once how to reach an LLM:
    - your company token (typed in hidden)
    - the Grok CLI, which it picks by default when `grok` is installed
@@ -21,7 +21,7 @@ On Windows, double-click **`setup.cmd`**. On macOS or Linux, run `./setup.sh`.
 7. **Asks one live question**, "How many people work in Engineering?", but only when an LLM is
    configured.
 8. **Prints a summary** of each step (OK, WARN, FAIL or SKIP) and offers to start the API and open
-   `http://127.0.0.1:8000/docs`.
+   the chat UI at `http://127.0.0.1:8000/ui`.
 
 When you double-click it, the window stays open at the end so you can read the results. You can run it
 as many times as you like; a second run takes about 20 seconds.
