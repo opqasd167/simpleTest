@@ -1,0 +1,19 @@
+[
+  {"id": "U1", "question": "How many days of annual leave do employees with less than 3 years of service get?", "route": "unstructured", "status": "grounded", "expect_in_answer": ["20"]},
+  {"id": "U2", "question": "How many unused leave days can be carried over, and by when must they be used?", "route": "unstructured", "status": "grounded", "expect_in_answer": ["5", "31 March"]},
+  {"id": "U3", "question": "When do I need a medical certificate for sick leave?", "route": "unstructured", "status": "grounded", "expect_in_answer": ["3"]},
+  {"id": "U4", "question": "What is the daily meal expense limit?", "route": "unstructured", "status": "grounded", "expect_in_answer": ["75"]},
+  {"id": "U5", "question": "Who must approve a trip that costs more than $1,500?", "route": "unstructured", "status": "grounded", "expect_in_answer": ["VP"]},
+  {"id": "U6", "question": "How often must passwords be changed?", "route": "unstructured", "status": "grounded", "expect_in_answer": ["90"]},
+  {"id": "U7", "question": "What are the four data classification levels?", "route": "unstructured", "status": "grounded", "expect_in_answer": ["Public", "Internal", "Confidential", "Restricted"]},
+  {"id": "U8", "question": "How many days per week do employees have to work in the office?", "route": "unstructured", "status": "grounded", "expect_in_answer": ["3"]},
+  {"id": "S1", "question": "How many people work in Engineering?", "route": "structured", "status": "grounded", "expect_in_answer": ["2"]},
+  {"id": "S2", "question": "Which expenses were over $500, and who submitted them?", "route": "structured", "status": "grounded", "expect_in_answer": ["Dana"]},
+  {"id": "S3", "question": "What is the total amount spent on travel?", "route": "structured", "status": "grounded", "expect_in_answer": ["2250"]},
+  {"id": "S4", "question": "Who has used the most leave days?", "route": "structured", "status": "grounded", "expect_in_answer": ["Ben"]},
+  {"id": "H1", "question": "Has Ben Ortiz used more annual leave than the policy allows?", "route": "hybrid", "status": "grounded", "expect_in_answer": ["22", "20"]},
+  {"id": "H2", "question": "Did Dana Kim's travel expense need VP approval?", "route": "hybrid", "status": "grounded", "expect_in_answer": ["1830", "VP"]},
+  {"id": "H3", "question": "Which employees had meal expenses above the policy limit?", "route": "hybrid", "status": "grounded", "expect_in_answer": ["Ben"]},
+  {"id": "N1", "question": "What is the CEO's salary?", "route": null, "status": "insufficient_evidence", "expect_in_answer": []},
+  {"id": "N2", "question": "What was the company's revenue last year?", "route": null, "status": "insufficient_evidence", "expect_in_answer": []}
+]

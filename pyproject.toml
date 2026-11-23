@@ -1,0 +1,34 @@
+[project]
+name = "km-assistant"
+version = "0.1.0"
+description = "Knowledge-management QA: intent routing over documents and SQL, with a groundedness check"
+requires-python = ">=3.11"
+dependencies = [
+  "anthropic",
+  "chromadb",
+  "pypdf",
+  "python-docx>=1.1",
+  "pydantic>=2",
+  "pydantic-settings",
+  "python-dotenv",
+  "fastapi",
+  "uvicorn[standard]",
+  "langfuse>=5",
+]
+
+[project.optional-dependencies]
+dev = ["pytest", "httpx"]
+
+[project.scripts]
+km = "km.cli:main"
+
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+pythonpath = ["src"]
+testpaths = ["tests"]
