@@ -1,0 +1,28 @@
+1) Objective
+
+Build a small, working coding example for an internal Knowledge Management system that:
+
+Hosts unstructured content (e.g., PDF, Word).
+Hosts structured content (e.g., tables in an SQL database).
+Accepts a natural-language query and determines query intent to route the request to:
+unstructured retrieval,
+structured retrieval (SQL), or
+both (hybrid).
+Includes a groundedness / answer validation step so responses are supported by retrieved evidence (documents and/or SQL results).
+Candidates may use any LLM/agentic framework
+2) Deliverables
+
+Submit the following:
+
+A. Code (required)
+
+Runnable scripts or small repo (preferably GitHub) demonstrating the end-to-end pipeline.
+Includes ingestion/indexing for documents and querying for SQL data.
+Includes routing by intent and a groundedness/validation step.
+B. README (required)
+
+Brief architecture/pipeline description (bullet points are fine).
+Key design decisions (frameworks/tools chosen and why).
+How intent routing works (structured vs unstructured vs hybrid).
+How groundedness/validation works and what happens when evidence is insufficient.
+How to run locally (setup, commands, env vars) plus a few example queries.
