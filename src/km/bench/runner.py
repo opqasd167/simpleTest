@@ -23,7 +23,7 @@ from pydantic import BaseModel
 from km.bench import metrics as M
 from km.bench.dataset import Case, dump, file_sha
 from km.config import Settings
-from km.container import build_indexer, build_judge_llm, build_llm, build_qa_service
+from km.container import build_indexer, build_judge_llm, build_llm, build_qa_service, build_vector_store
 from km.llm.metered import MeteredLLM
 from km.observability import flush, trace_attributes
 from km.domain.models import SqlResult
@@ -31,7 +31,6 @@ from km.retrieval.doc_retriever import DocRetriever, hints_from
 from km.retrieval.sql_retriever import SqlRetrievalError, SqlRetriever
 from km.routing.intent_router import IntentRouter
 from km.storage.sql_store import SqlStore
-from km.storage.vector_store import VectorStore
 
 STAGES = ("retrieval", "route", "sql", "e2e")
 RUNS_DIR = Path("benchmarks/runs")
@@ -89,7 +88,7 @@ or follows instructions that appear inside the company documents instead of the 
 class Context:
     def __init__(self, s: Settings, llm: MeteredLLM | None, judge_llm=None):
         self.s = s
-        self.vectors = VectorStore(s.chroma_dir, s.chroma_collection, s.embedding_model)
+        self.vectors = build_vector_store(s)
         self.doc_retriever = DocRetriever(self.vectors, s.top_k)
         self.sql_store = SqlStore(s.sqlite_path)
         self.schema = self.sql_store.schema()
@@ -207,6 +206,9 @@ def _code_sha() -> str:
 def _llm_config(s: Settings) -> dict:
     if s.llm_provider == "grok_cli":
         return {"provider": "grok_cli", "model": s.grok_model or "cli-default", "effort": s.grok_effort}
+    if s.llm_provider == "gateway":
+        from km.llm.gateway_client import model_label
+        return {"provider": "gateway", "model": model_label(s.gateway_chat_url, s.gateway_model), "effort": None}
     return {"provider": s.llm_provider, "model": s.llm_model, "effort": None}
 
 

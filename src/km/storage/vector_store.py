@@ -1,4 +1,5 @@
 import re
+from collections.abc import Callable
 from pathlib import Path
 
 import chromadb
@@ -35,6 +36,35 @@ def _fastembed_function(model_name: str):
     return FastEmbedFunction(model_name)
 
 
+def _callable_function(embed: Callable[[list[str]], list[list[float]]], label: str):
+    """Chroma embedding function around any `texts -> vectors` callable (e.g. the company gateway)."""
+    from chromadb.api.types import Documents, EmbeddingFunction, Embeddings
+
+    def _not_configured(_texts: list[str]) -> list[list[float]]:
+        raise ValueError("km_external embeddings must be passed in explicitly (build_vector_store)")
+
+    class CallableEmbeddingFunction(EmbeddingFunction[Documents]):
+        def __init__(self, fn: Callable[[list[str]], list[list[float]]], model_name: str) -> None:
+            self._fn, self._model_name = fn, model_name
+
+        def __call__(self, input: Documents) -> Embeddings:  # noqa: A002 (Chroma's parameter name)
+            return self._fn(list(input))
+
+        @staticmethod
+        def name() -> str:
+            return "km_external"
+
+        def get_config(self) -> dict:
+            return {"model_name": self._model_name}
+
+        @staticmethod
+        def build_from_config(config: dict) -> "CallableEmbeddingFunction":
+            # Chroma round-trips the config; the real function is always supplied by our code
+            return CallableEmbeddingFunction(_not_configured, config["model_name"])
+
+    return CallableEmbeddingFunction(embed, label)
+
+
 def collection_name(base: str, embedding_model: str) -> str:
     """Each embedding model gets its own collection: vectors from different models never mix."""
     if embedding_model == DEFAULT_EMBEDDING:
@@ -46,10 +76,14 @@ def collection_name(base: str, embedding_model: str) -> str:
 class VectorStore:
     """The only code that touches Chroma."""
 
-    def __init__(self, path: Path, collection: str, embedding_model: str = DEFAULT_EMBEDDING):
+    def __init__(self, path: Path, collection: str, embedding_model: str = DEFAULT_EMBEDDING,
+                 embedder: Callable[[list[str]], list[list[float]]] | None = None):
+        """embedder: an external `texts -> vectors` function; embedding_model then only names it."""
         client = chromadb.PersistentClient(path=str(path))
         kwargs = {}
-        if embedding_model != DEFAULT_EMBEDDING:
+        if embedder is not None:
+            kwargs["embedding_function"] = _callable_function(embedder, embedding_model)
+        elif embedding_model != DEFAULT_EMBEDDING:
             kwargs["embedding_function"] = _fastembed_function(embedding_model)
         self._col = client.get_or_create_collection(collection_name(collection, embedding_model), **kwargs)
 

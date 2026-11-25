@@ -25,7 +25,7 @@ from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 from km.config import get_settings
-from km.container import build_llm, build_qa_service
+from km.container import build_llm, build_qa_service, build_vector_store
 from km.llm.metered import MeteredLLM
 from km.logging_setup import setup_logging
 from km.observability import flush, trace_attributes
@@ -275,7 +275,7 @@ def main() -> None:
         print(f"--retry-failed: re-running {failed} failed question(s)")
     metered, grok, start = None, None, time.perf_counter()
     if args.tier == "retrieval":
-        fn = check_retrieval(VectorStore(s.chroma_dir, s.chroma_collection, s.embedding_model), s.top_k)
+        fn = check_retrieval(build_vector_store(s), s.top_k)
     else:
         inner = build_llm(s)
         grok = inner if hasattr(inner, "total_cost_usd") else None

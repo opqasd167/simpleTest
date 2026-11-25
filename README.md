@@ -34,7 +34,8 @@ src/km/
   container.py         composition root: builds every object from Settings
   observability.py     Langfuse tracing (on only when keys are set)
   domain/models.py     Route, DocChunk, SqlResult, Evidence, Verdict, AskResult
-  llm/                 LLMClient interface, anthropic_client (production), grok_cli_client (local test double), prompts
+  llm/                 LLMClient interface, anthropic_client, gateway_client (company AI gateway: chat +
+                       embeddings), grok_cli_client (local test double), prompts
   storage/             vector_store (Chroma), sql_store (SQLite, read-only queries)
   ingestion/           loaders (PDF pages + OCR for scans, Word paragraphs + tables), chunker,
                        indexer (attaches docs/_metadata.json: status, effective dates, region)
@@ -126,7 +127,10 @@ python tests/eval/run_eval.py    # 17-question evaluation against the configured
 
 | Variable | Purpose |
 | --- | --- |
-| `KM_LLM_PROVIDER` | `anthropic` (company gateway) or `grok_cli` (local simulator) |
+| `KM_LLM_PROVIDER` | `anthropic` (Anthropic-compatible gateway), `gateway` (company AI gateway, OpenAI-style) or `grok_cli` (local simulator) |
+| `KM_GATEWAY_CHAT_URL`, `KM_GATEWAY_EMBED_URL` | Company AI gateway endpoints: `.../<Use Case ID>/<Model Provider>/<Model Name>/chat/completions` and `.../embeddings` |
+| `KM_GATEWAY_TOKEN`, `KM_GATEWAY_AUTH` | Staff AM token (`staff`, sends `Token_Type: SESSION_TOKEN`) or service-account JWT (`service`) |
+| `KM_GATEWAY_JSON_MODE` | `prompt` (default), `json_object` or `json_schema` for structured outputs |
 | `KM_LLM_API_TOKEN` | Your company LLM token (required for `anthropic`) |
 | `KM_LLM_BASE_URL` | Company gateway URL; empty = api.anthropic.com |
 | `KM_LLM_AUTH_MODE` | `api_key` (x-api-key header) or `bearer` |
@@ -135,10 +139,27 @@ python tests/eval/run_eval.py    # 17-question evaluation against the configured
 | `HTTPS_PROXY`, `SSL_CERT_FILE` | Only if your network needs them; leave commented out otherwise |
 | `LANGFUSE_PUBLIC_KEY`, `LANGFUSE_SECRET_KEY`, `LANGFUSE_BASE_URL` | Optional tracing |
 | `KM_TRACE_CONTENT` | `false` = traces carry timings, tokens and scores only |
-| `KM_EMBEDDING_MODEL` | `default` (English) or a fastembed model, e.g. `intfloat/multilingual-e5-large`; re-run `km ingest` |
+| `KM_EMBEDDING_MODEL` | `default` (English), a fastembed model, e.g. `intfloat/multilingual-e5-large`, or `gateway:<model>` for the company AI gateway; re-run `km ingest` |
 | `KM_OCR_ENABLED` | OCR scanned PDF pages (default `true`; needs the `ocr` extra) |
 | `KM_JUDGE_PROVIDER`, `KM_JUDGE_MODEL` | Benchmark grader; use a different model than the one tested |
 | `KM_QUESTION_LOG` | Path to log real questions and `/feedback` for `python -m km.bench harvest` (Internal data) |
+
+### Using the company AI gateway
+
+Set `KM_LLM_PROVIDER=gateway` and fill in `KM_GATEWAY_CHAT_URL`, `KM_GATEWAY_TOKEN` and `KM_GATEWAY_AUTH`.
+The client sends the same request as the gateway's sample script (`testCompanyApi.py`): a Bearer token,
+`x-correlation-id` / `x-usersession-id` headers, and TLS verified against the OS certificate store via
+`truststore`. Structured outputs (router, SQL writer, validator) put the JSON Schema in the prompt and
+validate the reply, with one repair round on invalid JSON; set `KM_GATEWAY_JSON_MODE=json_schema` if the
+model supports `response_format`.
+
+For gateway embeddings, set `KM_GATEWAY_EMBED_URL` and `KM_EMBEDDING_MODEL=gateway:<model name>`, then run
+`km ingest`. The name only labels the index (each embedding model gets its own Chroma collection) and is
+sent as `model` in the request. Chat and embeddings are independent: you can use gateway chat with local
+embeddings, or the reverse.
+
+Check connectivity first with `python testCompanyApi.py`: it reads the same `.env` settings and tests chat
+(and embeddings, if configured) without running the pipeline.
 
 ### Local testing with the Grok CLI
 

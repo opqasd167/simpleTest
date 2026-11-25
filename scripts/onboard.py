@@ -104,6 +104,11 @@ def llm_status() -> tuple[bool, str]:
         if shutil.which(grok):
             return True, f"Grok CLI simulator ({grok})"
         return False, f"KM_LLM_PROVIDER=grok_cli but '{grok}' is not on PATH"
+    if provider == "gateway":
+        missing = [k for k in ("KM_GATEWAY_CHAT_URL", "KM_GATEWAY_TOKEN") if not env.get(k)]
+        if missing:
+            return False, f"KM_LLM_PROVIDER=gateway but {' and '.join(missing)} not set in .env"
+        return True, f"company AI gateway ({env['KM_GATEWAY_CHAT_URL'].split('/')[2]})"
     if env.get("KM_LLM_API_TOKEN"):
         return True, f"company gateway ({env.get('KM_LLM_BASE_URL') or 'api.anthropic.com'})"
     return False, "no KM_LLM_API_TOKEN in .env"
@@ -184,10 +189,11 @@ def step_env(interactive: bool) -> None:
 
     grok_found = shutil.which("grok") is not None
     print("\nThe live steps need an LLM. How do you want to connect?")
-    print("  1) Company LLM gateway   (paste your token)")
-    print(f"  2) Grok CLI simulator    (local 'grok' CLI, {'found' if grok_found else 'NOT found'} on PATH)")
-    print("  3) Skip for now          (offline tests and the free benchmark only)")
-    choice = ask("Choose 1, 2 or 3", "2" if grok_found else "3", interactive)
+    print("  1) Anthropic-compatible gateway   (paste your token)")
+    print(f"  2) Grok CLI simulator             (local 'grok' CLI, {'found' if grok_found else 'NOT found'} on PATH)")
+    print("  3) Skip for now                   (offline tests and the free benchmark only)")
+    print("  4) Company AI gateway             (chat/completions URL + AM token or JWT)")
+    choice = ask("Choose 1, 2, 3 or 4", "2" if grok_found else "3", interactive)
 
     if choice == "1":
         token = getpass.getpass("KM_LLM_API_TOKEN (input hidden): ").strip()
@@ -198,6 +204,18 @@ def step_env(interactive: bool) -> None:
                      "KM_LLM_BASE_URL": base_url, "KM_LLM_AUTH_MODE": mode})
     elif choice == "2":
         set_env({"KM_LLM_PROVIDER": "grok_cli", "KM_GROK_EFFORT": "low"})
+    elif choice == "4":
+        url = ask("Chat completions URL (.../<Use Case ID>/<Provider>/<Model>/chat/completions)", "", interactive)
+        auth = ask("Auth: staff (AM token) or service (JWT)", "staff", interactive)
+        token = getpass.getpass("KM_GATEWAY_TOKEN (input hidden): ").strip()
+        embed = ask("Embeddings URL (empty = keep local embeddings)", "", interactive)
+        updates = {"KM_LLM_PROVIDER": "gateway", "KM_GATEWAY_CHAT_URL": url,
+                   "KM_GATEWAY_AUTH": auth, "KM_GATEWAY_TOKEN": token}
+        if embed:
+            name = ask("Embedding model name (used to name the index)", embed.rstrip("/").split("/")[-2], interactive)
+            updates |= {"KM_GATEWAY_EMBED_URL": embed, "KM_EMBEDDING_MODEL": f"gateway:{name}"}
+        if url and token:
+            set_env(updates)
 
     ready, detail = llm_status()
     record("Config", "OK" if ready else "WARN", f"LLM: {detail}")

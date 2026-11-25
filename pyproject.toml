@@ -5,6 +5,8 @@ description = "Knowledge-management QA: intent routing over documents and SQL, w
 requires-python = ">=3.11"
 dependencies = [
   "anthropic",
+  "httpx",
+  "truststore",                                     # corporate root CA from the OS store (AI gateway)
   "chromadb",
   "pypdf",
   "python-docx>=1.1",

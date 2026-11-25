@@ -10,6 +10,7 @@ On Windows, double-click **`setup.cmd`**. On macOS or Linux, run `./setup.sh`.
    changed.
 3. **Sets up `.env`.** If there isn't one, it copies `.env.example` and asks once how to reach an LLM:
    - your company token (typed in hidden)
+   - the company AI gateway: chat/completions URL, AM token or JWT, and optionally an embeddings URL
    - the Grok CLI, which it picks by default when `grok` is installed
    - skip, and run only the offline steps
 
