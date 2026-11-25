@@ -143,3 +143,49 @@ def test_model_label_and_judge_url():
     other = "https://gw.example/proxy/use-case-1/google/gemini-y/chat/completions"
     judge = build_judge_llm(settings(judge_model=other))
     assert judge._url == other
+
+
+def _timeout(url: str) -> Exception:
+    """A wrapped ConnectTimeout, as raised from deep inside a download library."""
+    try:
+        try:
+            raise httpx.ConnectTimeout("timed out", request=httpx.Request("GET", url))
+        except httpx.ConnectTimeout as e:
+            raise RuntimeError("download failed") from e
+    except RuntimeError as outer:
+        return outer
+
+
+def test_network_error_names_the_blocked_host():
+    from km.net_errors import explain
+    hf = explain(_timeout("https://huggingface.co/intfloat/x"), "intfloat/multilingual-e5-large")
+    assert "huggingface.co" in hf and "gateway:<model>" in hf
+    gw = explain(_timeout(CHAT_URL), "default", gateway_hosts=("gw.example",))
+    assert "AI gateway is unreachable" in gw
+    assert explain(ValueError("not network")) is None
+
+
+def test_gateway_connect_timeout_names_host():
+    def boom(request):
+        raise httpx.ConnectTimeout("timed out", request=request)
+    client = GatewayClient(settings(), transport=httpx.MockTransport(boom))
+    with pytest.raises(LLMError, match="gw.example"):
+        client.complete("s", "u")
+
+
+def test_base_url_like_the_openai_sdk():
+    """Same requests as the gateway's OpenAI-SDK sample: base_url + model name in the body."""
+    base = "https://gw.example/ai-gateway-ppd-internal-proxy/v1/UC0000001"
+    s = settings(gateway_base_url=base + "/", gateway_chat_url=None, gateway_embed_url=None,
+                 gateway_model="gemini-2.5-pro", gateway_auth="service")
+    assert s.gateway_chat_url == base + "/chat/completions"
+    assert s.gateway_embed_url == base + "/embeddings"
+    rec = Recorder((200, chat_reply("hi")), (200, {"data": [{"index": 0, "embedding": [0.1, 0.2]}]}))
+    GatewayClient(s, transport=rec.transport).complete("s", "Hello, how are you?")
+    GatewayEmbedder(s, "uae", transport=rec.transport)(["text"])
+    assert str(rec.requests[0].url) == base + "/chat/completions"
+    assert rec.body(0)["model"] == "gemini-2.5-pro"
+    assert rec.requests[0].headers["Authorization"] == "Bearer tok-123"
+    assert "Token_Type" not in rec.requests[0].headers
+    assert str(rec.requests[1].url) == base + "/embeddings"
+    assert rec.body(1) == {"input": ["text"], "model": "uae"}

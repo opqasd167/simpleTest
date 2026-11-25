@@ -6,3 +6,4 @@ def setup_logging(level: str = "INFO") -> None:
     # Third-party libraries are noisy at INFO
     for noisy in ("httpx", "chromadb", "urllib3"):
         logging.getLogger(noisy).setLevel(logging.WARNING)
+    logging.getLogger("chromadb.telemetry").setLevel(logging.CRITICAL)  # harmless posthog errors

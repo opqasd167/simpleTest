@@ -1,8 +1,12 @@
 import argparse
+import sys
+from urllib.parse import urlparse
 
 from km.config import get_settings
 from km.container import build_indexer, build_qa_service
+from km.llm.base import LLMError
 from km.logging_setup import setup_logging
+from km.net_errors import explain
 from km.observability import flush
 from km.question_log import log_question
 from km.storage.sql_store import SqlStore
@@ -21,6 +25,17 @@ def main() -> None:
     args = parser.parse_args()
 
     s = get_settings()
+    try:
+        run(args, s)
+    except Exception as e:  # network/LLM failures get a one-line diagnosis instead of a traceback
+        gateway_hosts = tuple(urlparse(u).hostname for u in (s.gateway_chat_url, s.gateway_embed_url) if u)
+        message = explain(e, s.embedding_model, gateway_hosts)
+        if message is None and not isinstance(e, LLMError):
+            raise
+        sys.exit(f"ERROR: {message or e}")
+
+
+def run(args: argparse.Namespace, s) -> None:
     if args.cmd == "seed":
         SqlStore(s.sqlite_path).init_from_script(s.seed_sql)
         print("Database ready")
@@ -32,7 +47,14 @@ def main() -> None:
         print(result.model_dump_json(indent=2))
         flush()  # send the trace to Langfuse before exiting
     elif args.cmd == "serve":
+        import socket
+
         import uvicorn
+        with socket.socket() as sock:
+            if sock.connect_ex(("127.0.0.1", args.port)) == 0:
+                sys.exit(f"ERROR: port {args.port} is already in use, probably by another `km serve`. "
+                         f"Open http://127.0.0.1:{args.port}/ui, stop the other one (Ctrl+C in its "
+                         f"window), or use `km serve --port {args.port + 1}`.")
         print(f"Chat UI: http://127.0.0.1:{args.port}/ui    API docs: http://127.0.0.1:{args.port}/docs")
         uvicorn.run("km.api.app:app", port=args.port)
 

@@ -4,7 +4,7 @@ from functools import lru_cache
 from pathlib import Path
 from typing import Literal
 
-from pydantic import SecretStr
+from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -28,6 +28,9 @@ class Settings(BaseSettings):
 
     # Company AI gateway, OpenAI-compatible (KM_GATEWAY_*). The full URLs come from the gateway guide:
     #   .../<Use Case ID>/<Model Provider>/<Model Name>/chat/completions   and   .../embeddings
+    # Or set only the OpenAI-style base URL (what the OpenAI SDK calls base_url), e.g. .../v1/<Use Case ID>;
+    # chat and embeddings then default to <base>/chat/completions and <base>/embeddings
+    gateway_base_url: str | None = None
     gateway_chat_url: str | None = None
     gateway_embed_url: str | None = None
     gateway_token: SecretStr | None = None   # staff AM token or service-account JWT
@@ -78,6 +81,14 @@ class Settings(BaseSettings):
     # Question log (feeds the benchmark dataset). Off unless a path is set.
     # Logs contain user questions: treat the file as Internal data.
     question_log: Path | None = None
+
+    @model_validator(mode="after")
+    def _gateway_urls_from_base(self) -> "Settings":
+        if self.gateway_base_url:
+            base = self.gateway_base_url.rstrip("/")
+            self.gateway_chat_url = self.gateway_chat_url or f"{base}/chat/completions"
+            self.gateway_embed_url = self.gateway_embed_url or f"{base}/embeddings"
+        return self
 
 
 @lru_cache

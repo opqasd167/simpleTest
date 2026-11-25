@@ -79,7 +79,9 @@ class VectorStore:
     def __init__(self, path: Path, collection: str, embedding_model: str = DEFAULT_EMBEDDING,
                  embedder: Callable[[list[str]], list[list[float]]] | None = None):
         """embedder: an external `texts -> vectors` function; embedding_model then only names it."""
-        client = chromadb.PersistentClient(path=str(path))
+        # telemetry off: it phones home, and a posthog version clash logs errors on every start
+        client = chromadb.PersistentClient(path=str(path),
+                                           settings=chromadb.Settings(anonymized_telemetry=False))
         kwargs = {}
         if embedder is not None:
             kwargs["embedding_function"] = _callable_function(embedder, embedding_model)

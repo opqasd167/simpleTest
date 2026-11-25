@@ -66,8 +66,10 @@ class GatewayTransport:
                 resp = self._client.post(url, headers=self._headers(), json=body)
             except httpx.TransportError as e:
                 if last:
-                    raise LLMError(f"Cannot reach the AI gateway ({type(e).__name__}): "
-                                   "check the URL, VPN/proxy and certificates") from e
+                    raise LLMError(f"Cannot reach the AI gateway at {httpx.URL(url).host} "
+                                   f"({type(e).__name__}): check VPN / office network, the URL, "
+                                   "HTTPS_PROXY and certificates; `python testCompanyApi.py` "
+                                   "runs a step-by-step network check") from e
                 time.sleep(2 ** attempt)
                 continue
             if resp.status_code in _RETRY_STATUS and not last:

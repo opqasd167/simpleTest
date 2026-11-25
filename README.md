@@ -128,7 +128,8 @@ python tests/eval/run_eval.py    # 17-question evaluation against the configured
 | Variable | Purpose |
 | --- | --- |
 | `KM_LLM_PROVIDER` | `anthropic` (Anthropic-compatible gateway), `gateway` (company AI gateway, OpenAI-style) or `grok_cli` (local simulator) |
-| `KM_GATEWAY_CHAT_URL`, `KM_GATEWAY_EMBED_URL` | Company AI gateway endpoints: `.../<Use Case ID>/<Model Provider>/<Model Name>/chat/completions` and `.../embeddings` |
+| `KM_GATEWAY_BASE_URL`, `KM_GATEWAY_MODEL` | Company AI gateway, OpenAI-style: base URL `.../v1/<Use Case ID>` (chat = `/chat/completions`, embeddings = `/embeddings`) and the chat model name |
+| `KM_GATEWAY_CHAT_URL`, `KM_GATEWAY_EMBED_URL` | Full endpoint URLs instead of a base URL (they win over it) |
 | `KM_GATEWAY_TOKEN`, `KM_GATEWAY_AUTH` | Staff AM token (`staff`, sends `Token_Type: SESSION_TOKEN`) or service-account JWT (`service`) |
 | `KM_GATEWAY_JSON_MODE` | `prompt` (default), `json_object` or `json_schema` for structured outputs |
 | `KM_LLM_API_TOKEN` | Your company LLM token (required for `anthropic`) |
@@ -146,7 +147,9 @@ python tests/eval/run_eval.py    # 17-question evaluation against the configured
 
 ### Using the company AI gateway
 
-Set `KM_LLM_PROVIDER=gateway` and fill in `KM_GATEWAY_CHAT_URL`, `KM_GATEWAY_TOKEN` and `KM_GATEWAY_AUTH`.
+Set `KM_LLM_PROVIDER=gateway` and fill in `KM_GATEWAY_BASE_URL` (the OpenAI SDK's `base_url`, ending in the
+use case ID), `KM_GATEWAY_MODEL`, `KM_GATEWAY_TOKEN` and `KM_GATEWAY_AUTH` (or full `KM_GATEWAY_CHAT_URL` /
+`KM_GATEWAY_EMBED_URL` instead of the base URL).
 The client sends the same request as the gateway's sample script (`testCompanyApi.py`): a Bearer token,
 `x-correlation-id` / `x-usersession-id` headers, and TLS verified against the OS certificate store via
 `truststore`. Structured outputs (router, SQL writer, validator) put the JSON Schema in the prompt and
