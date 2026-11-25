@@ -2,7 +2,7 @@ import argparse
 import sys
 from urllib.parse import urlparse
 
-from km.config import get_settings
+from km.config import ConfigError, get_settings
 from km.container import build_indexer, build_qa_service
 from km.llm.base import LLMError
 from km.logging_setup import setup_logging
@@ -30,7 +30,7 @@ def main() -> None:
     except Exception as e:  # network/LLM failures get a one-line diagnosis instead of a traceback
         gateway_hosts = tuple(urlparse(u).hostname for u in (s.gateway_chat_url, s.gateway_embed_url) if u)
         message = explain(e, s.embedding_model, gateway_hosts)
-        if message is None and not isinstance(e, LLMError):
+        if message is None and not isinstance(e, (LLMError, ConfigError)):
             raise
         sys.exit(f"ERROR: {message or e}")
 

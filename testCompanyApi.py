@@ -13,11 +13,10 @@ import sys
 import urllib.request
 from urllib.parse import urlparse
 
-from km.config import Settings
+from km.config import ConfigError, Settings
+from km.container import GATEWAY_EMBEDDING_PREFIX, check_embedding_config
 from km.llm.base import LLMError
 from km.llm.gateway_client import GatewayClient, GatewayEmbedder
-
-GATEWAY_EMBEDDING_PREFIX = "gateway:"
 
 
 def tcp_ok(host: str, port: int, timeout: float = 5.0) -> str | None:
@@ -60,6 +59,21 @@ def main() -> int:
     question = sys.argv[1] if len(sys.argv) > 1 else "hi, how are you?"
     ok = True
 
+    print("Settings read from .env:")
+    print(f"  KM_LLM_PROVIDER     = {s.llm_provider}" + ("" if s.llm_provider == "gateway" else
+          "   <- set to gateway to answer questions through the company gateway"))
+    print(f"  KM_GATEWAY_BASE_URL = {s.gateway_base_url or '(not set)'}")
+    print(f"  KM_GATEWAY_MODEL    = {s.gateway_model or '(not set)'}")
+    token_set = bool(s.gateway_token and s.gateway_token.get_secret_value())
+    print(f"  KM_GATEWAY_TOKEN    = {'set' if token_set else '(not set)'}")
+    print(f"  KM_EMBEDDING_MODEL  = {s.embedding_model}")
+    try:
+        check_embedding_config(s)
+    except ConfigError as e:
+        print(f"\nCONFIG PROBLEM: {e}")
+        ok = False
+    print()
+
     if not s.gateway_chat_url:
         print("Set KM_GATEWAY_BASE_URL (or KM_GATEWAY_CHAT_URL) in .env")
         return 1
@@ -72,10 +86,9 @@ def main() -> int:
         print("Chat FAILED:", e)
         ok = False
 
-    if s.gateway_embed_url:
-        model = s.embedding_model.removeprefix(GATEWAY_EMBEDDING_PREFIX) \
-            if s.embedding_model.startswith(GATEWAY_EMBEDDING_PREFIX) else ""
-        print(f"\nEmbed URL: {s.gateway_embed_url}")
+    if s.gateway_embed_url and s.embedding_model.startswith(GATEWAY_EMBEDDING_PREFIX):
+        model = s.embedding_model.removeprefix(GATEWAY_EMBEDDING_PREFIX)
+        print(f"\nEmbed URL: {s.gateway_embed_url}\nModel:     {model}")
         if urlparse(s.gateway_embed_url).hostname != urlparse(s.gateway_chat_url).hostname:
             network_check(s.gateway_embed_url)
         try:

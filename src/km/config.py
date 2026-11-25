@@ -8,6 +8,10 @@ from pydantic import SecretStr, model_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
+class ConfigError(Exception):
+    """A setting in .env is missing or has the wrong kind of value."""
+
+
 class Settings(BaseSettings):
     model_config = SettingsConfigDict(env_file=".env", env_prefix="KM_", extra="ignore")
 

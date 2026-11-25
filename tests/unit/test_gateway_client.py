@@ -107,8 +107,28 @@ def test_retries_on_server_error(monkeypatch):
 def test_missing_token_or_url():
     with pytest.raises(LLMError, match="KM_GATEWAY_TOKEN"):
         GatewayClient(settings(gateway_token=None))
-    with pytest.raises(LLMError, match="KM_GATEWAY_CHAT_URL"):
+    with pytest.raises(LLMError, match="KM_GATEWAY_BASE_URL"):
         GatewayClient(settings(gateway_chat_url=None))
+
+
+@pytest.mark.parametrize("value, message", [
+    ("https://gw.example/proxy/v1/UC1", "is a URL"),
+    ("gateway:https://gw.example/proxy/v1/UC1", "URL after 'gateway:'"),
+    ("gateway:", "no model name"),
+    ("gemini-2.5-pro", "is your chat model"),
+])
+def test_embedding_config_mixups_are_explained(tmp_path, value, message):
+    from km.config import ConfigError
+    s = settings(chroma_dir=tmp_path, embedding_model=value, gateway_model="gemini-2.5-pro")
+    with pytest.raises(ConfigError, match=message):
+        build_vector_store(s)
+
+
+def test_gateway_embeddings_without_base_url(tmp_path):
+    from km.config import ConfigError
+    s = settings(chroma_dir=tmp_path, embedding_model="gateway:uae", gateway_embed_url=None)
+    with pytest.raises(ConfigError, match="KM_GATEWAY_BASE_URL"):
+        build_vector_store(s)
 
 
 def test_embedder_batches_and_orders_by_index():

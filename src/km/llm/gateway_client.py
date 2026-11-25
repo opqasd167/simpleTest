@@ -100,7 +100,7 @@ class GatewayClient:
 
     def __init__(self, settings: Settings, transport: httpx.BaseTransport | None = None):
         if not settings.gateway_chat_url:
-            raise LLMError("KM_GATEWAY_CHAT_URL is not set in .env")
+            raise LLMError("KM_GATEWAY_BASE_URL (or KM_GATEWAY_CHAT_URL) is not set in .env")
         self._http = GatewayTransport(settings, transport)
         self._url = settings.gateway_chat_url
         self._model = settings.gateway_model          # sent in the body only when set
@@ -183,7 +183,8 @@ class GatewayEmbedder:
 
     def __init__(self, settings: Settings, model: str, transport: httpx.BaseTransport | None = None):
         if not settings.gateway_embed_url:
-            raise LLMError("KM_EMBEDDING_MODEL uses the gateway but KM_GATEWAY_EMBED_URL is not set")
+            raise LLMError("KM_EMBEDDING_MODEL uses the gateway but KM_GATEWAY_BASE_URL "
+                           "(or KM_GATEWAY_EMBED_URL) is not set")
         self._http = GatewayTransport(settings, transport)
         self._url = settings.gateway_embed_url
         self._model = model
