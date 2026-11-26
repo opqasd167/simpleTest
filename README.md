@@ -25,6 +25,10 @@ question
   -> QAService decides       grounded -> answer | partial -> supported claims only | else -> refusal
 ```
 
+![Indexing and answering flow: SQL facts decide which policy version and region the answer uses](docs/images/architecture-flow.png)
+
+![Groundedness check: every answer is validated claim by claim before the user sees it](docs/images/groundedness-flow.png)
+
 Layered `src/` layout. Dependencies point downward; only `llm/` knows an LLM vendor and only
 `storage/` knows Chroma/SQLite.
 
@@ -219,6 +223,27 @@ What the first run found, and the fixes:
 
 Grok is a simulator: re-run the eval against the company gateway (`KM_LLM_PROVIDER=anthropic`) before relying on these numbers.
 
+## Five-question walkthrough (for demos and explaining the pipeline)
+
+Five questions, one per path through the pipeline, each with a printed analysis: route and reason, SQL,
+evidence tags, claim-by-claim check, status, and the LLM calls it took.
+
+| # | Question | Route | What it shows | LLM calls |
+| --- | --- | --- | --- | --- |
+| 1 | What is the daily meal expense limit? | unstructured | documents only, no SQL writer | 3 |
+| 2 | What is the total amount spent on travel? | structured | SQL only; SQLite does the arithmetic | 4 |
+| 3 | Did Dana Kim's travel expense need VP approval? | hybrid | SQL runs first; its expense date steers document search | 4 |
+| 4 | Has Ben Ortiz used more annual leave than the policy allows? | hybrid | an unsupported claim is removed (offline version) | 4 |
+| 5 | What is the CEO's salary? | structured | bad SQL retried once, then a refusal, never a guess | 3 |
+
+```powershell
+pytest tests/integration/test_five_questions.py -v -s   # offline, scripted model, free and deterministic
+python tests/eval/run_five_questions.py                 # the real model, with time per pipeline stage
+```
+
+LLM calls set both latency and cost: in a live Grok run of question 1, the 3 calls took 19.0 s of 19.1 s,
+and retrieval plus code took 0.16 s. The pipeline saves calls by skipping stages a question does not need.
+
 ## Benchmark suite (v2 corpus)
 
 The 17-question eval above runs on a deliberately easy corpus. `benchmarks/corpora/v2` is a harder test world,
@@ -323,6 +348,8 @@ All LLM runs in this round cost about $4.10 on Grok.
 Real question logs repeat a lot. `scripts/generate_questions.py` simulates 10,000 logged questions
 (33 intents x 2-3 wordings x 10 phrasing wrappers, drawn with skewed popularity). Ground truth for SQL
 questions is computed by running SQL, not typed by hand.
+
+![Evaluation tiers: cheap checks run on every question, the full pipeline on a sample](docs/images/evaluation-tiers.png)
 
 ```powershell
 python scripts/generate_questions.py --n 10000                     # tests/eval/questions_10k.jsonl
