@@ -11,6 +11,7 @@ x-correlation-id / x-usersession-id, TLS via the OS certificate store (truststor
 import socket
 import sys
 import urllib.request
+from pathlib import Path
 from urllib.parse import urlparse
 
 from km.config import ConfigError, Settings
@@ -54,10 +55,22 @@ def network_check(url: str) -> None:
               "     proxy: set HTTPS_PROXY in .env (ask IT, or check the browser's proxy settings).")
 
 
+def duplicate_keys(env_file: Path = Path(".env")) -> list[str]:
+    """Keys set more than once in .env: the LAST line silently wins, a common cause of surprises."""
+    if not env_file.exists():
+        return []
+    keys = [ln.split("=", 1)[0].strip() for ln in env_file.read_text(encoding="utf-8").splitlines()
+            if "=" in ln and not ln.lstrip().startswith("#")]
+    return sorted({k for k in keys if keys.count(k) > 1})
+
+
 def main() -> int:
     s = Settings()
     question = sys.argv[1] if len(sys.argv) > 1 else "hi, how are you?"
     ok = True
+
+    for key in duplicate_keys():
+        print(f"WARNING: {key} is set more than once in .env; only the LAST line is used. Delete the others.")
 
     print("Settings read from .env:")
     print(f"  KM_LLM_PROVIDER     = {s.llm_provider}" + ("" if s.llm_provider == "gateway" else

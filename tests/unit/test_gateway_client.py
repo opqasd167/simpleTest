@@ -209,3 +209,10 @@ def test_base_url_like_the_openai_sdk():
     assert "Token_Type" not in rec.requests[0].headers
     assert str(rec.requests[1].url) == base + "/embeddings"
     assert rec.body(1) == {"input": ["text"], "model": "uae"}
+
+
+def test_base_url_in_chat_url_setting_is_accepted():
+    base = "https://gw.example/ai-gateway-ppd-internal-proxy/v1/UC0000001"
+    s = settings(gateway_chat_url=base, gateway_embed_url=None)
+    assert s.gateway_chat_url == base + "/chat/completions"
+    assert s.gateway_embed_url == base + "/embeddings"

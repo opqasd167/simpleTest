@@ -88,6 +88,10 @@ class Settings(BaseSettings):
 
     @model_validator(mode="after")
     def _gateway_urls_from_base(self) -> "Settings":
+        chat = (self.gateway_chat_url or "").rstrip("/")
+        if chat and not chat.endswith("/chat/completions") and not self.gateway_base_url:
+            # a base URL put in KM_GATEWAY_CHAT_URL: treat it as KM_GATEWAY_BASE_URL
+            self.gateway_base_url, self.gateway_chat_url = chat, None
         if self.gateway_base_url:
             base = self.gateway_base_url.rstrip("/")
             self.gateway_chat_url = self.gateway_chat_url or f"{base}/chat/completions"
