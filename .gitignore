@@ -10,3 +10,4 @@ tests/eval/runs/
 tests/eval/questions_10k.jsonl
 .bench/
 data/logs/
+tests/eval/five_questions_last_run.json
